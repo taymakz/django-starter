@@ -1,0 +1,13 @@
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+django-filter==23.5
+psycopg==3.1.17
+Pillow==10.2.0
+celery==5.3.6
+redis==5.0.1
+django-treebeard==4.7
+python-dotenv==1.0.0
+djangorestframework-simplejwt==5.3.1
+django-storages==1.14.2
+django-jalali-date==1.1.0

@@ -1,0 +1,46 @@
+version: "3.9"
+
+services:
+  app:
+    container_name: django_project
+    build:
+      context: .
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/src
+    env_file:
+      - ./.env
+    depends_on:
+      - db
+      - redis
+  db:
+    container_name: database
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
+  redis:
+    container_name: redis
+    image: redis:alpine
+  celery:
+    container_name: celery
+    restart: always
+    build:
+      context: .
+    command: celery -A config worker -l INFO
+    volumes:
+      - ./app:/app
+    env_file:
+      - ./.env
+    depends_on:
+      - app
+volumes:
+  pgdata:
