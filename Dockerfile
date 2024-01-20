@@ -19,8 +19,8 @@ COPY ./src /src
 
 WORKDIR src
 
-EXPOSE 80
 
+EXPOSE 8000
 RUN /py/bin/pip install -r /requirements/development.txt
 
 # RUN apk add  geos gdal
@@ -36,8 +36,7 @@ RUN chmod -R +x /scripts && \
 
 ENV PATH="/scripts:/py/bin:$PATH"
 
-USER root
-RUN chown -R taymaz:taymaz /src
+
 USER taymaz
 
 CMD ["run.sh"]

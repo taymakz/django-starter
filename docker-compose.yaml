@@ -1,8 +1,8 @@
 version: "3.9"
 
 services:
-  app:
-    container_name: django_project
+  backend:
+    container_name: django_app
     build:
       context: .
     command: >
@@ -10,8 +10,8 @@ services:
              python manage.py migrate &&
              gunicorn config.wsgi:application --bind 0.0.0.0:8000"
     #             python manage.py runserver 0.0.0.0:8000"
-    ports:
-      - "8000:8000"
+
+
     volumes:
       - ./src:/src
     env_file:
@@ -19,6 +19,17 @@ services:
     depends_on:
       - db
       - redis
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - backend
+
   db:
     container_name: database
     image: postgres:15-alpine
@@ -29,16 +40,7 @@ services:
     env_file:
       - ./.env
 
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-    depends_on:
-      - app
+
   redis:
     container_name: redis
     image: redis:alpine
@@ -53,7 +55,7 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - app
+      - backend
   celery-beat:
     container_name: celery_beat
     command: celery -A config beat -l info
@@ -65,6 +67,6 @@ services:
     env_file:
       - ./.env
     depends_on:
-      - app
+      - backend
 volumes:
   pgdata:
