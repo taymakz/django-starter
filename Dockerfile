@@ -19,7 +19,7 @@ COPY ./src /src
 
 WORKDIR src
 
-EXPOSE 8000
+EXPOSE 80
 
 RUN /py/bin/pip install -r /requirements/development.txt
 

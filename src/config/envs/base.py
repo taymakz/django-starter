@@ -41,9 +41,10 @@ EXTERNAL_APPS = [
     'jalali_date',
 ]
 INTERNAL_APPS = [
-    'apps.media',
-    'apps.auths.account',
-    'apps.messages.verification',
+    'config.api',
+    'config.apps.media',
+    'config.apps.auths.account',
+    'config.apps.messages.verification',
 
 ]
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
@@ -160,8 +161,8 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
-    # 'DEFAULT_PAGINATION_CLASS': 'site_api.api_configuration.response.PaginationApiResponse',
-    # 'PAGE_SIZE': 20
+    'DEFAULT_PAGINATION_CLASS': 'config.api.response.PaginationApiResponse',
+    'PAGE_SIZE': 20
 
 }
 

@@ -2,14 +2,15 @@ import hashlib
 from datetime import datetime
 
 from PIL import Image
-from apps.media.exceptions import DuplicateImageException
-from config.libs.db.models import BaseModel
 from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.crypto import get_random_string
 from imagekit.models import ProcessedImageField
+
+from config.apps.media.exceptions import DuplicateImageException
+from config.libs.db.models import BaseModel
 
 
 def upload_to(instance, filename):

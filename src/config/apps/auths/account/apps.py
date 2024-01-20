@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
 
-class VerificationConfig(AppConfig):
+class AccountConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.messages.verification"
+    name = "config.apps.auths.account"

@@ -1,6 +1,7 @@
-from apps.messages.verification.models import VerifyOTPService
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
+from config.apps.messages import VerifyOTPService
 
 
 class Command(BaseCommand):
