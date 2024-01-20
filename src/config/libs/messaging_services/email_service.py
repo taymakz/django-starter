@@ -4,12 +4,9 @@ from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
-def send_otp_email(to, context, template_name='emails/email_otp.html', subject="فروشگاه ادویه | کد تایید"):
+def send_otp_email(to, context, template_name='emails/email_otp.html', subject="جنگو | کد تایید"):
     try:
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)
@@ -20,7 +17,7 @@ def send_otp_email(to, context, template_name='emails/email_otp.html', subject="
         print(e)
 
 
-def send_newsletter_email(to, context, template_name='emails/email_otp.html', subject="راکافا | کد تایید"):
+def send_newsletter_email(to, context, template_name='emails/email_otp.html', subject="جنگو | کد تایید"):
     try:
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)
@@ -31,7 +28,7 @@ def send_newsletter_email(to, context, template_name='emails/email_otp.html', su
         pass
 
 
-def send_verify_newsletter_email(to, context, template_name='emails/email_otp.html', subject="راکافا | کد تایید"):
+def send_verify_newsletter_email(to, context, template_name='emails/email_otp.html', subject="جنگو | کد تایید"):
     try:
         html_message = render_to_string(template_name, context)
         plain_message = strip_tags(html_message)

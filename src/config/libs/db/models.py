@@ -29,3 +29,6 @@ class BaseModel(models.Model):
         self.is_deleted = True
         self.deleted_at = timezone.now()
         self.save()
+
+    def full_delete(self, using=None, keep_parents=False):
+        super(BaseModel, self).delete(using=using, keep_parents=keep_parents)

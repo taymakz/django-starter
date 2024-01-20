@@ -1,15 +1,21 @@
 from .base import *
 
-
 ALLOWED_HOSTS = ['*']
 
-INSTALLED_APPS  =  [
-   'daphne',
-   'drf_spectacular',
-] + INSTALLED_APPS
+INSTALLED_APPS = [
+                     'daphne',
+                     'drf_spectacular',
+                     'debug_toolbar',
+                 ] + INSTALLED_APPS
 
+MIDDLEWARE = [
+                 'debug_toolbar.middleware.DebugToolbarMiddleware'
+             ] + MIDDLEWARE
+INTERNAL_IPS = [
 
-
+    '127.0.0.1',
+    'localhost'
+]
 LOGGING = {
     'version': 1,
     'handlers': {

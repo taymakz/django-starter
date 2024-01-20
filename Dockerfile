@@ -36,6 +36,8 @@ RUN chmod -R +x /scripts && \
 
 ENV PATH="/scripts:/py/bin:$PATH"
 
+USER root
+RUN chown -R taymaz:taymaz /src
 USER taymaz
 
 CMD ["run.sh"]

@@ -2,6 +2,9 @@ import uuid
 from datetime import timedelta
 from enum import Enum
 
+from config.libs.db.models import BaseModel
+from config.libs.persian import province, cities
+from config.libs.validator.validators import validate_phone
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin, AbstractUser
 from django.db import models
@@ -10,10 +13,6 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
-
-from src.config.libs.db.models import BaseModel
-from src.config.libs.persian import province, cities
-from src.config.libs.validator.validators import validate_phone
 
 
 class UserManager(BaseUserManager):

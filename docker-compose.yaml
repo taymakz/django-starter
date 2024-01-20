@@ -6,7 +6,8 @@ services:
     build:
       context: .
     command: >
-      sh -c "python manage.py migrate &&
+      sh -c "python manage.py makemigrations &&
+             python manage.py migrate &&
              python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
@@ -37,7 +38,19 @@ services:
       context: .
     command: celery -A config worker -l INFO
     volumes:
-      - ./app:/app
+      - ./src:/src
+    env_file:
+      - ./.env
+    depends_on:
+      - app
+  celery-beat:
+    container_name: celery_beat
+    command: celery -A config beat -l info
+    restart: always
+    build:
+      context: .
+    volumes:
+      - ./src:/src
     env_file:
       - ./.env
     depends_on:

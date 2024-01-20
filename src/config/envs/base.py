@@ -1,8 +1,6 @@
-from pathlib import Path
-from datetime import timedelta
-
 import os
-
+from datetime import timedelta
+from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -11,29 +9,45 @@ SECRET_KEY = os.environ.get('SECRET_KEY')
 DEBUG = os.environ.get('DEBUG') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
+CORS_ALLOWED_ORIGINS = (
+    os.environ.get("CORS_ALLOWED_ORIGINS", "").split(",")
+    if os.environ.get("CORS_ALLOWED_ORIGINS")
+    else []
+)
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
+BACKEND_URL = os.environ.get("BACKEND_URL")
 
-FRONTEND_URL = os.environ.get('FRONTEND_URL')
-BACKEND_URL = os.environ.get('BACKEND_URL')
+FARAZ_SMS_API = os.environ.get("FARAZ_SMS_API")
 
-INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+ZARINPAL_MERCHANT = os.environ.get("ZARINPAL_MERCHANT")
+ZARINPAL_SANDBOX = os.environ.get("ZARINPAL_SANDBOX") == "True"
 
+DJANGO_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+]
+EXTERNAL_APPS = [
+    'django_filters',
     'rest_framework',
+    'corsheaders',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
-
-    'django_filters',
-    'corsheaders',
+    "imagekit",
     'treebeard',
     'jalali_date',
-
-    'config.apps.auths.account',
 ]
+INTERNAL_APPS = [
+    'apps.media',
+    'apps.auths.account',
+    'apps.messages.verification',
+
+]
+INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
+
 AUTH_USER_MODEL = "account.User"
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -78,8 +92,6 @@ DATABASES = {
     }
 }
 
-
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -95,31 +107,62 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "Asia/Tehran"
 
 USE_I18N = True
 
 USE_TZ = True
-
-
-
-STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+STORAGES = {
+    "default": {"BACKEND": "config.storage.MediaStorage"},
+    "staticfiles": {"BACKEND": "config.storage.StaticStorage"},
+}
 
+AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
+AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+AWS_S3_OBJECT_PARAMETERS = {
+    "CacheControl": "max-age=86400",
+}
+
+AWS_URL = os.environ.get("AWS_URL")
+
+MEDIA_URL = f"{AWS_URL}/media/"
+STATIC_URL = f"{AWS_URL}/static/"
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get("CELERY_BROKER_URL"),
+        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+    }
+}
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TIMEZONE = "Asia/Tehran"
+CELERY_ENABLE_UTC = False
+CELERY_TASK_SERIALIZER = 'json'
 
 REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
-    ]
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    ],
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ),
+    # 'DEFAULT_PAGINATION_CLASS': 'site_api.api_configuration.response.PaginationApiResponse',
+    # 'PAGE_SIZE': 20
+
 }
 
 SPECTACULAR_SETTINGS = {
