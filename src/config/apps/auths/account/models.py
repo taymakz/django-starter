@@ -2,9 +2,6 @@ import uuid
 from datetime import timedelta
 from enum import Enum
 
-from config.libs.db.models import BaseModel
-from config.libs.persian import province, cities
-from config.libs.validator.validators import validate_phone
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin, AbstractUser
 from django.db import models
@@ -13,6 +10,10 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
+
+from config.libs.db.models import BaseModel
+from config.libs.persian import province, cities
+from config.libs.validator.validators import validate_phone
 
 
 class UserManager(BaseUserManager):
@@ -65,7 +66,7 @@ class User(BaseModel, AbstractUser):
         default_manager_name = 'objects'
         db_table = "users"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.username}"
 
     def __init__(self, *args, **kwargs):
@@ -116,7 +117,7 @@ class User(BaseModel, AbstractUser):
 
         super().save(*args, **kwargs)
 
-    def revoke_all_tokens(self):
+    def revoke_all_tokens(self) -> None:
         for token in OutstandingToken.objects.filter(user=self).exclude(
                 id__in=BlacklistedToken.objects.filter(token__user=self).values_list('token_id', flat=True),
         ):
@@ -129,11 +130,11 @@ class User(BaseModel, AbstractUser):
             "access": refresh.token
         }
 
-    def generate_password_reset_token(self):
+    def generate_password_reset_token(self) -> str:
         self.clear_password_reset_token()
         return UserPasswordResetToken.objects.create(user=self).token
 
-    def clear_password_reset_token(self):
+    def clear_password_reset_token(self) -> None:
         UserPasswordResetToken.objects.filter(user=self).delete()
 
 
@@ -164,7 +165,7 @@ class UserPreviousDetailHistory(BaseModel):
     class Meta:
         db_table = "users_previous_detail_history"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"user : {self.user.username} changed from {self.old_value} to {self.new_value} in {self.created_at}"
 
 
@@ -177,7 +178,7 @@ class UserPasswordResetToken(models.Model):
     class Meta:
         db_table = "users_password_reset_tokens"
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"user : {self.user.username} - ({self.token})"
 
     def save(self, *args, **kwargs):
@@ -186,7 +187,7 @@ class UserPasswordResetToken(models.Model):
             self.expire_at = timezone.now() + timedelta(minutes=5)
         super().save(*args, **kwargs)
 
-    def is_expired(self):
+    def is_expired(self) -> bool:
         return self.expire_at < timezone.now()
 
 
