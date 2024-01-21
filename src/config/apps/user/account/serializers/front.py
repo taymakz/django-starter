@@ -20,3 +20,40 @@ class UserSerializer(serializers.ModelSerializer):
             "is_verify",
             "has_password",
         )
+
+
+# Authentication Section -------------------------------
+class UserLogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
+class UserAuthenticationCheckSerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+
+class UserPasswordAuthenticationCheckSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    password = serializers.CharField()
+
+
+class UserOTPAuthenticationCheckSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    otp = serializers.CharField()
+
+
+# Forgot Password Section -------------------------------
+
+class UserForgotPasswordCheckSerializer(serializers.Serializer):
+    username = serializers.CharField()
+
+
+class UserForgotPasswordOTPSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    otp = serializers.CharField()
+
+
+class UserForgotPasswordResetSerializer(serializers.Serializer):
+    username = serializers.CharField()
+    token = serializers.CharField()
+    password = serializers.CharField()
+    confirm_password = serializers.CharField()

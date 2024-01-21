@@ -14,7 +14,9 @@ from config.apps.messages.verification.models import VerifyOTPService, Verificat
     VerificationMessageTypeOptions
 from config.apps.user.account.enums import UserAuthenticationCheckSectionEnum
 from config.apps.user.account.models import User, UserPasswordResetToken
-from config.apps.user.account.serializers.front import UserSerializer
+from config.apps.user.account.serializers.front import UserSerializer, UserLogoutSerializer, \
+    UserAuthenticationCheckSerializer, UserPasswordAuthenticationCheckSerializer, UserOTPAuthenticationCheckSerializer, \
+    UserForgotPasswordCheckSerializer, UserForgotPasswordOTPSerializer, UserForgotPasswordResetSerializer
 from config.libs.validator.validators import validate_username, validate_password
 
 
@@ -47,14 +49,15 @@ class UserLogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        # Get the refresh token from the request data
-        refresh_token = request.data.get('refresh')
+        serializer = UserLogoutSerializer(data=request.data)
 
         # Check if refresh token is provided
-        if not refresh_token:
+        if not serializer.is_valid():
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
         try:
+            # Get the refresh token from the request data
+            refresh_token = serializer.validated_data.get('refresh')
             # Blacklist the refresh token using Django Rest Framework SimpleJWT
             token = RefreshToken(refresh_token)
             token.blacklist()
@@ -75,12 +78,20 @@ class UserAuthenticationCheckView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        # Get the username from the request data and convert it to lowercase
-        username = request.data.get('username').lower()
+        serializer = UserAuthenticationCheckSerializer(data=request.data)
+
         # If username is not provided, return a bad request response
-        if not username or not validate_username:
+        if not serializer.is_valid():
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.NOT_VALID_EMAIL_OR_PHONE.value)
+
+        # Get the username from the request data and convert it to lowercase
+        username = serializer.validated_data.get('username').lower()
+
+        if not validate_username(username):
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.NOT_VALID_EMAIL_OR_PHONE.value)
+
         # Check if the username Type is a Phone
         if User.is_phone(username):
             # Format ( add 0 at first ) the phone number if needed
@@ -197,12 +208,17 @@ class UserPasswordAuthenticationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        # Get username and password from request data
-        username = request.data.get('username', None).lower()
-        password = request.data.get('password', None)
 
-        # Check if username, password, and username validation are provided
-        if not username or not password or not validate_username:
+        serializer = UserPasswordAuthenticationCheckSerializer(data=request.data)
+
+        # Check if username validation are provided
+        if not serializer.is_valid():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+            # Get username and password from request data
+        username = serializer.validated_data.get('username').lower()
+        password = serializer.validated_data.get('password')
+        if not validate_username(username):
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
 
@@ -243,12 +259,20 @@ class UserOTPAuthenticationView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
+
+        serializer = UserOTPAuthenticationCheckSerializer(data=request.data)
+
+        # Check if username validation are provided
+        if not serializer.is_valid():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
         # Get username and OTP from request data
-        username = request.data.get('username', None).lower()
-        otp = request.data.get('otp', None)
+        username = serializer.validated_data.get('username').lower()
+        otp = serializer.validated_data.get('otp').lower()
 
         # Check if username, OTP, and username validation are provided
-        if not username or not otp or not validate_username:
+        if not validate_username:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
         # Determine the type of username (email or phone) and format it
@@ -327,9 +351,17 @@ class UserForgotPasswordCheckView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
-        # Get and validate username from request data
-        username = request.data.get('username', None).lower()
-        if not username or not validate_username(username):
+        serializer = UserForgotPasswordCheckSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        # Get username from request data
+        username = serializer.validated_data.get('username').lower()
+
+        # Check if username validation are provided
+        if not validate_username(username):
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
 
@@ -383,10 +415,17 @@ class UserForgotPasswordOTPView(APIView):
 
     def post(self, request, format=None):
 
-        # Get and validate username and OTP from request data
-        username = request.data.get('username', None).lower()
-        otp = request.data.get('otp', None)
-        if not username or not otp or not validate_username(username):
+        serializer = UserForgotPasswordOTPSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        # Get username , otp from request data
+        username = serializer.validated_data.get('username').lower()
+        otp = serializer.validated_data.get('otp')
+
+        if not validate_username(username):
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
 
@@ -432,15 +471,21 @@ class UserForgotPasswordResetView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, format=None):
+        serializer = UserForgotPasswordResetSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
         # Get and validate request data
-
-        username = request.data.get('username').lower()
-        token = request.data.get('token')
+        username = serializer.validated_data.get('username').lower()
+        token = serializer.validated_data.get('token')
         token = token.strip('"')
-        password = request.data.get('password')
-        confirm_password = request.data.get('confirm_password')
 
-        if not (username and token and password and confirm_password) or not validate_username(username):
+        password = serializer.validated_data.get('password')
+        confirm_password = serializer.validated_data.get('confirm_password')
+
+        if not validate_username(username):
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
         # Validate password
