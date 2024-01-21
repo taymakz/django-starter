@@ -47,6 +47,7 @@ class RequestCurrentUserView(RetrieveAPIView):
 class UserLogoutView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    serializer_class = UserLogoutSerializer
 
     def post(self, request, format=None):
         serializer = UserLogoutSerializer(data=request.data)
@@ -76,6 +77,7 @@ class UserLogoutView(APIView):
 class UserAuthenticationCheckView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserAuthenticationCheckSerializer
 
     def post(self, request, format=None):
         serializer = UserAuthenticationCheckSerializer(data=request.data)
@@ -206,6 +208,7 @@ class UserAuthenticationCheckView(APIView):
 class UserPasswordAuthenticationView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserPasswordAuthenticationCheckSerializer
 
     def post(self, request, format=None):
 
@@ -257,6 +260,7 @@ class UserPasswordAuthenticationView(APIView):
 class UserOTPAuthenticationView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserOTPAuthenticationCheckSerializer
 
     def post(self, request, format=None):
 
@@ -349,6 +353,7 @@ class UserOTPAuthenticationView(APIView):
 class UserForgotPasswordCheckView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserForgotPasswordCheckSerializer
 
     def post(self, request, format=None):
         serializer = UserForgotPasswordCheckSerializer(data=request.data)
@@ -412,6 +417,7 @@ class UserForgotPasswordCheckView(APIView):
 class UserForgotPasswordOTPView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserForgotPasswordOTPSerializer
 
     def post(self, request, format=None):
 
@@ -469,6 +475,7 @@ class UserForgotPasswordOTPView(APIView):
 class UserForgotPasswordResetView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
+    serializer_class = UserForgotPasswordResetSerializer
 
     def post(self, request, format=None):
         serializer = UserForgotPasswordResetSerializer(data=request.data)
