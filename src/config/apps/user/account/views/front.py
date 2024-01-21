@@ -192,7 +192,7 @@ class UserAuthenticationCheckView(APIView):
 
 
 # User Password Login , Required Data : Username , Password
-class UserPasswordLoginView(APIView):
+class UserPasswordAuthenticationView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
@@ -238,7 +238,7 @@ class UserPasswordLoginView(APIView):
 
 
 # User Otp  Login , Required Data : Username , Otp
-class UserOTPLoginView(APIView):
+class UserOTPAuthenticationView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
@@ -427,7 +427,7 @@ class UserForgotPasswordOTPView(APIView):
 
 # User ForgotPassword ResetPassword Final Stage  ,
 # Required Data : Username (email or phone) , Token, new password, confirm new password
-class ForgotPasswordResetView(APIView):
+class UserForgotPasswordResetView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
