@@ -11,8 +11,9 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from config.apps.user.account.enums import UsernameTypesEnum
 from config.libs.db.models import BaseModel
-from config.libs.validator.validators import validate_phone
+from config.libs.validator.validators import validate_phone, validate_email
 
 
 class UserManager(BaseUserManager):
@@ -49,12 +50,13 @@ class UserManager(BaseUserManager):
 
 # Create your models here.
 class User(BaseModel, AbstractUser):
-    name = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    username = models.CharField(max_length=255, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True, blank=True, null=True)
     phone = models.CharField(unique=True, max_length=11, blank=True, null=True)
     national_code = models.CharField(max_length=10, null=True, blank=True)
     first_name = models.CharField(_("first name"), max_length=150, blank=True)
     last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    is_verify = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -135,6 +137,34 @@ class User(BaseModel, AbstractUser):
 
     def clear_password_reset_token(self) -> None:
         UserPasswordResetToken.objects.filter(user=self).delete()
+
+    @staticmethod
+    def get_formatted_phone(value: str) -> str:
+        if User.is_phone(value):
+            return f"0{value}" if len(value) == 10 == UsernameTypesEnum.PHONE.name else value
+        else:
+            raise ValueError("Invalid Phone Number.")
+
+    @staticmethod
+    def get_formatted_username(value: str) -> str:
+        return f"0{value}" if validate_phone(value) else value
+
+    @staticmethod
+    def get_username_type(username: str) -> str:
+        if validate_phone(username):
+            return UsernameTypesEnum.PHONE.name
+        elif validate_email(username):
+            return UsernameTypesEnum.EMAIL.name
+        else:
+            raise ValueError("Invalid username type. Must be either phone or email.")
+
+    @staticmethod
+    def is_phone(value: str) -> bool:
+        return True if validate_phone(value) else False
+
+    @staticmethod
+    def is_email(value: str) -> bool:
+        return True if validate_email(value) else False
 
 
 class RecycleUser(User):

@@ -1,28 +1,15 @@
 from datetime import timedelta
-from enum import Enum
 from random import randint
 
 from django.db import models
 from django.utils import timezone
 
 from . import tasks
-
-
-class VerificationMessageUsageOptions(Enum):
-    AUTHENTICATE = "احراز هویت"
-    RESET_PASSWORD = "بازیابی کلمه عبور"
-    VERIFY = "تایید"
-
+from .enums import VerificationMessageUsageOptions, VerificationMessageTypeOptions
 
 VERIFICATION_MESSAGE_USAGE_CHOICES = [
     (data.name, data.value) for data in VerificationMessageUsageOptions
 ]
-
-
-class VerificationMessageTypeOptions(Enum):
-    PHONE = "تلفن"
-    EMAIL = "ایمیل"
-
 
 VERIFICATION_MESSAGE_TYPE_CHOICES = [
     (data.name, data.value) for data in VerificationMessageTypeOptions

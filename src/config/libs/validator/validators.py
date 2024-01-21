@@ -12,6 +12,15 @@ def validate_email(email):
     return re.match(email_regex, email)
 
 
+def validate_username(username):
+    """
+    Validate a username that can be either an email or a phone number.
+    """
+    is_email = validate_email(username)
+    is_phone = validate_phone(username)
+    return True if (is_email or is_phone) else False
+
+
 def validate_password(password):
     if len(password) < 6 or len(password) > 18:
         return False, "کلمه عبور باید حداقل 6 و حداکثر 18 حرف باشد"
