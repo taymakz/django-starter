@@ -6,7 +6,7 @@ from config.api.enums import ResponseMessage
 
 
 class BaseResponse(Response):
-    def __init__(self, data=None, message=None, status=None):
+    def __init__(self, data=None, message: str = None, status: int = None):
         response_data = {
             "success": True if status // 100 == 2 else False,
             "status": status,
@@ -22,7 +22,7 @@ class PaginationApiResponse(PageNumberPagination):
     page_size = 20
     max_page_size = 100
 
-    def get_paginated_response(self, data):
+    def get_paginated_response(self, data) -> BaseResponse:
         current_page = self.page.number
         page_count = self.page.paginator.num_pages
         pagination = {

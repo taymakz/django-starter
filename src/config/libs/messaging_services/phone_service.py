@@ -8,7 +8,7 @@ api_key = settings.FARAZ_SMS_API
 url = "https://api2.ippanel.com/api/v1/sms/pattern/normal/send"
 
 
-def send_otp_phone(to, code):
+def send_otp_phone(to, code) -> None:
     payload = json.dumps({
         "code": "2k3wp5r73wans40",
         "sender": "+983000505",
@@ -23,7 +23,7 @@ def send_otp_phone(to, code):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
-    print(response)
+    print(response.json())
     # while True:
     #     response = requests.request("POST", url, headers=headers, data=payload)
     #     response_data = response.json()
@@ -36,7 +36,7 @@ def send_otp_phone(to, code):
     #         print("OTP sending failed. Retrying...")
 
 
-def send_order_status_phone(to, pattern, number, track_code=None):
+def send_order_status_phone(to, pattern, number, track_code=None) -> None:
     pattern_values = {
         "order_number": str(number),
     }
@@ -56,3 +56,4 @@ def send_order_status_phone(to, pattern, number, track_code=None):
     }
 
     response = requests.request("POST", url, headers=headers, data=payload)
+    print(response.json())
