@@ -2,7 +2,7 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, RecycleUser, UserPreviousDetailHistory, UserPasswordResetToken, UserAddresses
+from .models import User, RecycleUser, UserPreviousDetailHistory, UserPasswordResetToken
 
 
 class UserForm(forms.ModelForm):
@@ -74,24 +74,6 @@ class UserAdmin(admin.ModelAdmin):
     @admin.action(description="Recover Items")
     def recover_items(self, request, queryset):
         queryset.update(is_deleted=False, deleted_at=None)
-
-
-@admin.register(UserAddresses)
-class UserPreviousDetailHistoryAdmin(admin.ModelAdmin):
-    list_display = (
-        "user",
-        "receiver_fullname",
-        "receiver_phone",
-        "destination",
-    )
-
-    @staticmethod
-    def receiver_fullname(obj):
-        return obj.user.get_full_name()
-
-    @staticmethod
-    def destination(obj):
-        return f"{obj.receiver_province} / {obj.receiver_city}"
 
 
 @admin.register(UserPreviousDetailHistory)

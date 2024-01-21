@@ -12,7 +12,6 @@ from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, Bl
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from config.libs.db.models import BaseModel
-from config.libs.persian import province, cities
 from config.libs.validator.validators import validate_phone
 
 
@@ -191,34 +190,16 @@ class UserPasswordResetToken(models.Model):
         return self.expire_at < timezone.now()
 
 
-# class UserSearchHistory(models.Model):
-#     user = models.ForeignKey(
-#         "User", on_delete=models.CASCADE, related_name="search_histories"
-#     )
-#     search = models.CharField(max_length=255)
-#
-#     date_created = models.DateTimeField(auto_now_add=True, editable=False)
-#
-#     class Meta:
-#         db_table = "users_search_history"
-#
-#     def __str__(self):
-#         return f"{self.user} : {self.search}"
+class UserSearchHistory(models.Model):
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="search_histories"
+    )
+    search = models.CharField(max_length=255)
 
-
-class UserAddresses(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="addresses")
-    receiver_name = models.CharField(max_length=55)
-    receiver_family = models.CharField(max_length=55)
-    receiver_phone = models.CharField(max_length=11)
-    receiver_national_code = models.CharField(max_length=12)
-    receiver_province = models.CharField(max_length=100, choices=province.province)
-    receiver_city = models.CharField(max_length=100, choices=cities.cities)
-    receiver_postal_code = models.CharField(max_length=10)
-    receiver_address = models.TextField(max_length=100)
+    date_created = models.DateTimeField(auto_now_add=True, editable=False)
 
     class Meta:
-        db_table = "user_addresses"
+        db_table = "users_search_history"
 
-    def __str__(self):
-        return f"{self.user.username} | {self.receiver_province} | {self.receiver_city}"
+    def __str__(self) -> str:
+        return f"{self.user} : {self.search}"
