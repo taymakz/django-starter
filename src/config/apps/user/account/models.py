@@ -127,8 +127,8 @@ class User(BaseModel, AbstractUser):
     def generate_jwt_token(self):
         refresh = RefreshToken.for_user(self)
         return {
-            "refresh": refresh,
-            "access": refresh.token
+            "refresh": str(refresh),
+            "access": str(refresh.access_token)
         }
 
     def generate_password_reset_token(self) -> str:
@@ -147,7 +147,7 @@ class User(BaseModel, AbstractUser):
 
     @staticmethod
     def get_formatted_username(value: str) -> str:
-        return f"0{value}" if validate_phone(value) else value
+        return f"0{value}" if validate_phone(value) and len(str(value)) == 10 else value
 
     @staticmethod
     def get_username_type(username: str) -> str:

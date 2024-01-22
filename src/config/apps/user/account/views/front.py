@@ -84,11 +84,10 @@ class UserAuthenticationCheckView(APIView):
         # If username is not provided, return a bad request response
         if not serializer.is_valid():
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.NOT_VALID_EMAIL_OR_PHONE.value)
+                                message=ResponseMessage.FAILED.value)
 
         # Get the username from the request data and convert it to lowercase
         username = serializer.validated_data.get('username').lower()
-
         if not validate_username(username):
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.NOT_VALID_EMAIL_OR_PHONE.value)
@@ -133,7 +132,7 @@ class UserAuthenticationCheckView(APIView):
                 return BaseResponse(
                     data={'section': UserAuthenticationCheckSectionEnum.OTP.name},
                     status=status.HTTP_200_OK,
-                    message=ResponseMessage.SUCCESS.value
+                    message=ResponseMessage.PHONE_OTP_SENT.value.format(username=username)
                 )
 
             # If OTP service record exists and is expired, delete it
@@ -230,9 +229,9 @@ class UserPasswordAuthenticationView(APIView):
 
             # Query the database for the user based on the username type
             user = (
-                User.objects.get(phone=username).values('username', 'password')
+                User.objects.get(phone=username)
                 if User.is_phone(username)
-                else User.objects.get(email=username).values('username', 'password')
+                else User.objects.get(email=username)
             )
 
             # Check if the provided password matches the user's password

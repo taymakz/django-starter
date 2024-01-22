@@ -4,7 +4,6 @@ from random import randint
 from django.db import models
 from django.utils import timezone
 
-from . import tasks
 from .enums import VerificationMessageUsageOptions, VerificationMessageTypeOptions
 
 VERIFICATION_MESSAGE_USAGE_CHOICES = [
@@ -35,7 +34,7 @@ class VerifyOTPService(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.pk:
-            self.code = randint(10000, 99999)
+            self.code = randint(1000, 9999)
             self.expire_at = timezone.now() + timedelta(seconds=240)
         super().save(*args, **kwargs)
 
@@ -45,4 +44,6 @@ class VerifyOTPService(models.Model):
 
     def send_otp(self):
         if not self.is_expired():
-            tasks.send_otp_celery.delay(to=self.to, code=self.code, type=self.type)
+            pass
+            # Todo: un comment on production
+            # tasks.send_otp_celery.delay(to=self.to, code=self.code, type=self.type)
