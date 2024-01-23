@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DEBUG = os.environ.get('DEBUG') == 'True'
+LOCAL_STORAGE = os.environ.get('LOCAL_STORAGE') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
 CORS_ALLOWED_ORIGINS = (
@@ -117,23 +118,29 @@ USE_I18N = True
 USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-STORAGES = {
-    "default": {"BACKEND": "config.storage.MediaStorage"},
-    "staticfiles": {"BACKEND": "config.storage.StaticStorage"},
-}
+if LOCAL_STORAGE:
+    STATIC_URL = "static/"
+    MEDIA_ROOT = "/vol/web/media/"
+    MEDIA_URL = "media/"
+else:
 
-AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
-AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
-AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-AWS_S3_OBJECT_PARAMETERS = {
-    "CacheControl": "max-age=86400",
-}
+    STORAGES = {
+        "default": {"BACKEND": "config.storage.MediaStorage"},
+        "staticfiles": {"BACKEND": "config.storage.StaticStorage"},
+    }
 
-AWS_URL = os.environ.get("AWS_URL")
+    AWS_S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL")
+    AWS_STORAGE_BUCKET_NAME = os.environ.get("AWS_STORAGE_BUCKET_NAME")
+    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
+    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    AWS_S3_OBJECT_PARAMETERS = {
+        "CacheControl": "max-age=86400",
+    }
 
-MEDIA_URL = f"{AWS_URL}/media/"
-STATIC_URL = f"{AWS_URL}/static/"
+    AWS_URL = os.environ.get("AWS_URL")
+
+    MEDIA_URL = f"{AWS_URL}/media/"
+    STATIC_URL = f"{AWS_URL}/static/"
 
 CACHES = {
     "default": {
