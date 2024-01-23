@@ -450,7 +450,6 @@ class UserForgotPasswordOTPView(APIView):
                 .order_by("-id")
                 .first()
             )
-
             if not otp_service or otp_service.is_expired():
                 # Invalid or expired OTP
 
@@ -459,7 +458,7 @@ class UserForgotPasswordOTPView(APIView):
             # Delete the OTP service record and return success with the forgot password token
 
             otp_service.delete()
-            return BaseResponse(data={'token': user.forgot_password_token()}, status=status.HTTP_200_OK)
+            return BaseResponse(data={'token': user.generate_password_reset_token()}, status=status.HTTP_200_OK)
 
         except User.DoesNotExist:
             # User not found for password reset
