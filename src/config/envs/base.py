@@ -7,6 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('SECRET_KEY')
 
 DEBUG = os.environ.get('DEBUG') == 'True'
+if DEBUG:
+    INTERNAL_IPS = ["127.0.0.1", 'localhost']
 LOCAL_STORAGE = os.environ.get('LOCAL_STORAGE') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',') if os.environ.get('ALLOWED_HOSTS') else []
@@ -38,7 +40,7 @@ EXTERNAL_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     "imagekit",
-    'treebeard',
+    'treenode',
     'jalali_date',
 ]
 INTERNAL_APPS = [
@@ -47,11 +49,15 @@ INTERNAL_APPS = [
     'config.apps.user.account',
     'config.apps.messages.verification',
 
+    'config.apps.catalog',
+    'config.apps.inventory',
+
 ]
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
 
 AUTH_USER_MODEL = "account.User"
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     "corsheaders.middleware.CorsMiddleware",
@@ -144,10 +150,10 @@ else:
 
 CACHES = {
     "default": {
-        "BACKEND": "django.core.cache.backends.redis.RedisCache",
-        "LOCATION": os.environ.get("CELERY_BROKER_URL"),
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": os.environ.get("REDIS_URL"),
         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
-    }
+    },
 }
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")

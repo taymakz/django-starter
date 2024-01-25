@@ -7,8 +7,8 @@ from .models import Media
 @admin.register(Media)
 class MediaAdmin(admin.ModelAdmin):
     list_display = (
-        "file",
         "title",
+        "file",
         "resize_width",
         "resize_height",
     )
@@ -16,7 +16,6 @@ class MediaAdmin(admin.ModelAdmin):
         "title",
         "created_at",
     )
-    list_editable = ("title",)
 
     @staticmethod
     def file(obj):

@@ -5,7 +5,7 @@ admin_urls = [
          include(('config.apps.user.account.urls.admin', 'config.apps.user.account'), namespace='users_admin')),
     path('admin/messages/verification/',
          include(('config.apps.messages.verification.urls.admin', 'config.apps.messages.verification'),
-                 namespace='messages_verification_front')),
+                 namespace='messages_verification_admin')),
 ]
 
 front_urls = [

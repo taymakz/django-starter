@@ -6,7 +6,8 @@ psycopg==3.1.17
 Pillow==10.2.0
 celery==5.3.6
 redis==5.0.1
-django-treebeard==4.7
+django-redis
+django-treenode
 python-dotenv==1.0.0
 djangorestframework-simplejwt==5.3.1
 django-storages==1.14.2

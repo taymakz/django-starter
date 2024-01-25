@@ -506,27 +506,33 @@ class UserForgotPasswordResetView(APIView):
         try:
             # Try to retrieve the user based on the formatted username
 
-            user = User.objects.get(**{User.get_username_type(username).lower(): username})
-            # Check and delete the password reset token
-            UserPasswordResetToken.objects.get(
-                user=user,
-                token=token,
-                expire_at__lt=timezone.now()
-            ).delete()
+            user = User.objects.get(
+                **{User.get_username_type(username).lower(): username})
 
             # Set the new password, revoke all tokens, and save the user
+
+            token_object = UserPasswordResetToken.objects.get(
+                user=user,
+                token=token,
+                expire_at__gt=timezone.now()
+            )
+            # Check and delete the password reset token
+            token_object.delete()
             user.set_password(password)
             user.revoke_all_tokens()
             user.save()
             return BaseResponse(status=status.HTTP_200_OK,
                                 message=ResponseMessage.RESET_PASSWORD_SUCCESSFULLY.value)
         except User.DoesNotExist:
+     
             # User not found
-
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)
         except UserPasswordResetToken.DoesNotExist:
             # Password reset token not found or expired
 
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+        except Exception as e:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
                                 message=ResponseMessage.FAILED.value)

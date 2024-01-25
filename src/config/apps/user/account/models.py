@@ -119,6 +119,7 @@ class User(BaseModel, AbstractUser):
         super().save(*args, **kwargs)
 
     def revoke_all_tokens(self) -> None:
+
         for token in OutstandingToken.objects.filter(user=self).exclude(
                 id__in=BlacklistedToken.objects.filter(token__user=self).values_list('token_id', flat=True),
         ):
@@ -199,7 +200,7 @@ class UserPreviousDetailHistory(BaseModel):
 
 
 class UserPasswordResetToken(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reset_password_tokens')
     token = models.UUIDField(editable=False, unique=True, blank=True, null=True)
 
     expire_at = models.DateTimeField(blank=True, null=True)
