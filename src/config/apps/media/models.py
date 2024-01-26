@@ -50,6 +50,9 @@ class Media(BaseModel):
     focal_point_width = models.PositiveIntegerField(null=True, blank=True)
     focal_point_height = models.PositiveIntegerField(null=True, blank=True)
 
+    def get_file_name(self):
+        return self.file.name
+
     class Meta:
         db_table = "medias"
         ordering = ("-created_at", "-modified_at")

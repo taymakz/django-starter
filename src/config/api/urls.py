@@ -14,6 +14,9 @@ front_urls = [
     path('messages/verification/',
          include(('config.apps.messages.verification.urls.front', 'config.apps.messages.verification'),
                  namespace='messages_verification_front')),
+    path('catalog/',
+         include(('config.apps.catalog.urls.front', 'config.apps.catalog'),
+                 namespace='catalog_front')),
 ]
 
 urlpatterns = [] + admin_urls + front_urls
