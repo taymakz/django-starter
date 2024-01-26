@@ -12,29 +12,34 @@ class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = (
-            'id',
-            'image',
-            'title_ir',
-            'title_en',
-            'slug',
-            'order',
-            'children',
+            "id",
+            "image",
+            "title_ir",
+            "title_en",
+            "slug",
+            "order",
+            "children",
         )
 
     def get_children(self, obj: Category):
-        child_ids_str = getattr(obj, 'tn_children_pks', '')
+        child_ids_str = getattr(obj, "tn_children_pks", "")
         # Split the comma-separated string into a list of strings
-        child_ids_list = child_ids_str.split(',')
+        child_ids_list = child_ids_str.split(",")
         # Convert the list of strings to a list of integers
         child_ids = [int(pk) for pk in child_ids_list if pk.isdigit()]
-        children_queryset = Category.objects.filter(pk__in=child_ids).select_related('image')
-        children_serializer = CategorySerializer(children_queryset, many=True, context=self.context)
+        children_queryset = Category.objects.filter(pk__in=child_ids).select_related(
+            "image"
+        )
+        children_serializer = CategorySerializer(
+            children_queryset, many=True, context=self.context
+        )
         return children_serializer.data
 
 
 # Use extend_schema_field to define the type for the 'children' field
-CategorySerializer.get_children = extend_schema_field(serializers.ListField(child=CategorySerializer()))(
-    CategorySerializer.get_children)
+CategorySerializer.get_children = extend_schema_field(
+    serializers.ListField(child=CategorySerializer())
+)(CategorySerializer.get_children)
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -43,9 +48,10 @@ class BrandSerializer(serializers.ModelSerializer):
     class Meta:
         model = Brand
         fields = (
-            'image',
-            'title_ir',
-            'title_en',
+            "id",
+            "image",
+            "title_ir",
+            "title_en",
         )
 
 
@@ -57,6 +63,6 @@ class HeaderDataSerializer(serializers.ModelSerializer):
         model = Category
 
         fields = (
-            'brands',
-            'categories',
+            "brands",
+            "categories",
         )

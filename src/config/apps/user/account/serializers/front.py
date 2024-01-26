@@ -4,8 +4,8 @@ from ..models import User
 
 
 class UserSerializer(serializers.ModelSerializer):
-    full_name = serializers.CharField(source='get_full_name')
-    has_password = serializers.CharField(source='has_usable_password')
+    full_name = serializers.CharField(source="get_full_name")
+    has_password = serializers.CharField(source="has_usable_password")
 
     class Meta:
         model = User
@@ -42,6 +42,7 @@ class UserOTPAuthenticationCheckSerializer(serializers.Serializer):
 
 
 # Forgot Password Section -------------------------------
+
 
 class UserForgotPasswordCheckSerializer(serializers.Serializer):
     username = serializers.CharField()

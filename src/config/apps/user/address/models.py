@@ -5,7 +5,13 @@ from config.libs.persian import province, cities
 
 
 class UserAddresses(BaseModel):
-    user = models.ForeignKey('account.User', on_delete=models.SET_NULL, related_name="addresses", null=True, blank=True)
+    user = models.ForeignKey(
+        "account.User",
+        on_delete=models.SET_NULL,
+        related_name="addresses",
+        null=True,
+        blank=True,
+    )
     receiver_name = models.CharField(max_length=55)
     receiver_family = models.CharField(max_length=55)
     receiver_phone = models.CharField(max_length=11)

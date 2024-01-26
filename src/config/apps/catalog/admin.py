@@ -14,9 +14,9 @@ class CategoryAdmin(TreeNodeModelAdmin):
     # treenode_display_mode = TreeNodeModelAdmin.TREENODE_DISPLAY_MODE_ACCORDION
     treenode_display_mode = TreeNodeModelAdmin.TREENODE_DISPLAY_MODE_BREADCRUMBS
     # treenode_display_mode = TreeNodeModelAdmin.TREENODE_DISPLAY_MODE_INDENTATION
-    prepopulated_fields = {'slug': ('title_en',)}
-    list_display = ['__str__', 'title_ir', 'title_en', 'slug', 'file']
-    list_editable = ['title_ir', 'title_en', 'slug']
+    prepopulated_fields = {"slug": ("title_en",)}
+    list_display = ["__str__", "title_ir", "title_en", "slug", "file"]
+    list_editable = ["title_ir", "title_en", "slug"]
     # use TreeNodeForm to automatically exclude invalid parent choices
     form = TreeNodeForm
 
@@ -32,5 +32,5 @@ class CategoryAdmin(TreeNodeModelAdmin):
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'title_ir', 'title_en', 'order', 'image']
-    list_editable = ['title_ir', 'title_en', 'order', 'image']
+    list_display = ["__str__", "title_ir", "title_en", "order", "image"]
+    list_editable = ["title_ir", "title_en", "order", "image"]

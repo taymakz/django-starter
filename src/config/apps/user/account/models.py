@@ -8,7 +8,10 @@ from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from rest_framework_simplejwt.token_blacklist.models import OutstandingToken, BlacklistedToken
+from rest_framework_simplejwt.token_blacklist.models import (
+    OutstandingToken,
+    BlacklistedToken,
+)
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from config.apps.user.account.enums import UsernameTypesEnum
@@ -64,7 +67,7 @@ class User(BaseModel, AbstractUser):
     REQUIRED_FIELDS = []
 
     class Meta:
-        default_manager_name = 'objects'
+        default_manager_name = "objects"
         db_table = "users"
 
     def __str__(self) -> str:
@@ -119,18 +122,16 @@ class User(BaseModel, AbstractUser):
         super().save(*args, **kwargs)
 
     def revoke_all_tokens(self) -> None:
-
         for token in OutstandingToken.objects.filter(user=self).exclude(
-                id__in=BlacklistedToken.objects.filter(token__user=self).values_list('token_id', flat=True),
+            id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
+                "token_id", flat=True
+            ),
         ):
             BlacklistedToken.objects.create(token=token)
 
     def generate_jwt_token(self):
         refresh = RefreshToken.for_user(self)
-        return {
-            "refresh": str(refresh),
-            "access": str(refresh.access_token)
-        }
+        return {"refresh": str(refresh), "access": str(refresh.access_token)}
 
     def generate_password_reset_token(self) -> str:
         self.clear_password_reset_token()
@@ -142,7 +143,11 @@ class User(BaseModel, AbstractUser):
     @staticmethod
     def get_formatted_phone(value: str) -> str:
         if User.is_phone(value):
-            return f"0{value}" if len(value) == 10 == UsernameTypesEnum.PHONE.name else value
+            return (
+                f"0{value}"
+                if len(value) == 10 == UsernameTypesEnum.PHONE.name
+                else value
+            )
         else:
             raise ValueError("Invalid Phone Number.")
 
@@ -200,7 +205,9 @@ class UserPreviousDetailHistory(BaseModel):
 
 
 class UserPasswordResetToken(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reset_password_tokens')
+    user = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="reset_password_tokens"
+    )
     token = models.UUIDField(editable=False, unique=True, blank=True, null=True)
 
     expire_at = models.DateTimeField(blank=True, null=True)

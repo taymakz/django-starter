@@ -32,7 +32,7 @@ class Media(BaseModel):
         format="WEBP",
         options={"quality": 95},
         width_field="width",
-        height_field="height"
+        height_field="height",
     )
     title = models.CharField(max_length=128, null=True, blank=True)
 
@@ -77,7 +77,11 @@ class Media(BaseModel):
 @receiver(post_save, sender=Media)
 def create_signal(sender, instance: Media, **kwargs):
     # check_duplicate_hash
-    existed = Media.objects.filter(file_hash=instance.file_hash).exclude(pk=instance.pk).exists()
+    existed = (
+        Media.objects.filter(file_hash=instance.file_hash)
+        .exclude(pk=instance.pk)
+        .exists()
+    )
     if existed:
         raise DuplicateImageException("Duplicate")
 
@@ -98,9 +102,9 @@ def create_signal(sender, instance: Media, **kwargs):
         old_height = old_object.height
 
         if (
-                new_image != old_image
-                or (new_width != old_width)
-                or (new_height != old_height)
+            new_image != old_image
+            or (new_width != old_width)
+            or (new_height != old_height)
         ):
             if instance.file and (instance.resize_width and instance.resize_height):
                 # Get resize dimensions
@@ -113,9 +117,7 @@ def create_signal(sender, instance: Media, **kwargs):
                     # Resize and save the image
                     resized_image = image.resize((width, height))
 
-                    with default_storage.open(
-                            instance.file.name, "wb"
-                    ) as resized_file:
+                    with default_storage.open(instance.file.name, "wb") as resized_file:
                         resized_image.save(resized_file)
     except sender.DoesNotExist:
         if instance.file and (instance.resize_width and instance.resize_height):
