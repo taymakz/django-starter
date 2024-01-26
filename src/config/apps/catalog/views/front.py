@@ -18,22 +18,12 @@ class GetHeaderDataView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    @staticmethod
-    def _get_cached_data(key):
-        # Helper function to get cached data
-        return cache.get(key)
-
-    @staticmethod
-    def _set_cached_data(key, data, timeout=None):
-        # Helper function to set data in cache
-        cache.set(key, data, timeout)
-
     # @cache_page(60 * 15)  # Cache for 15 minutes
     def get(self, request, *args, **kwargs):
         try:
             # Check if data is in cache
-            cached_brands = self._get_cached_data("cached_brands")
-            cached_categories = self._get_cached_data("cached_categories")
+            cached_brands = cache.get("cached_brands")
+            cached_categories = cache.get("cached_categories")
 
             if cached_brands and cached_categories:
                 return BaseResponse(
@@ -71,10 +61,10 @@ class GetHeaderDataView(APIView):
             }
 
             # Set data in cache
-            self._set_cached_data(
+            cache.set(
                 "cached_brands", response_data["brands"], timeout=None
             )  # No expiration for brands
-            self._set_cached_data(
+            cache.set(
                 "cached_categories", response_data["categories"], timeout=None
             )  # No expiration for categories
 
