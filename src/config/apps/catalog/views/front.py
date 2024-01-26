@@ -52,7 +52,6 @@ class GetHeaderDataView(APIView):
                     "id",
                     "title_ir",
                     "title_en",
-                    "order",
                     "slug",
                     "image",
                     "tn_children_pks",

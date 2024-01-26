@@ -17,7 +17,6 @@ class CategorySerializer(serializers.ModelSerializer):
             "title_ir",
             "title_en",
             "slug",
-            "order",
             "children",
         )
 
