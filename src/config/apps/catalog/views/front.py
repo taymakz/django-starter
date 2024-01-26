@@ -18,7 +18,6 @@ class GetHeaderDataView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]
 
-    # @cache_page(60 * 15)  # Cache for 15 minutes
     def get(self, request, *args, **kwargs):
         try:
             # Check if data is in cache
