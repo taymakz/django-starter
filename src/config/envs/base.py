@@ -50,6 +50,7 @@ EXTERNAL_APPS = [
 INTERNAL_APPS = [
     "config.api",
     "config.apps.media",
+    "config.apps.content",
     "config.apps.user.account",
     "config.apps.messages.verification",
     "config.apps.catalog",

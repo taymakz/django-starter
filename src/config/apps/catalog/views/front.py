@@ -9,8 +9,7 @@ from config.apps.catalog.models import Category, Brand
 from config.apps.catalog.serializers.front import (
     HeaderDataSerializer,
     BrandSerializer,
-    CategorySerializer,
-)
+    CategorySerializer, CategorySerializerTest, )
 
 
 class GetHeaderDataView(APIView):
@@ -36,7 +35,7 @@ class GetHeaderDataView(APIView):
 
             # If not in cache, perform the queries
             categories = (
-                Category.objects.filter(tn_level=1)
+                Category.objects.filter(tn_level=1, is_public=True)
                 .only(
                     "id",
                     "title_ir",
@@ -77,3 +76,32 @@ class GetHeaderDataView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+class GetHeaderDataViewTest(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def build_tree(self, categories, parent_id=None):
+        tree = []
+        for category in categories:
+            if category.tn_parent_id == parent_id:
+                node = CategorySerializerTest(category).data
+                node["children"] = self.build_tree(categories, parent_id=category.id)
+                tree.append(node)
+        return tree
+
+    def get(self, request, *args, **kwargs):
+        categories = (
+            Category.objects.filter(is_public=True).select_related(
+                'image', ).only("id", "tn_parent_id", "tn_level", "tn_children_pks", "title_ir", "title_en", "slug",
+                                "image")
+        ).order_by('tn_level')
+        # TODO : need a Serializer
+        # Build the tree structure
+        tree = self.build_tree(categories)
+        return BaseResponse(
+            tree,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.SUCCESS.value,
+        )

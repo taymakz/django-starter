@@ -8,4 +8,9 @@ urlpatterns = [
         front.GetHeaderDataView.as_view(),
         name="catalog_get_header_data",
     ),
+    path(
+        "header/data/test",
+        front.GetHeaderDataViewTest.as_view(),
+        name="catalog_get_header_data",
+    ),
 ]

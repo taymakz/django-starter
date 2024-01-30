@@ -45,6 +45,13 @@ front_urls = [
             namespace="catalog_front",
         ),
     ),
+    path(
+        "content/",
+        include(
+            ("config.apps.content.urls.front", "config.apps.content"),
+            namespace="content_front",
+        ),
+    ),
 ]
 
 urlpatterns = [] + admin_urls + front_urls

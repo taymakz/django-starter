@@ -35,7 +35,22 @@ class CategorySerializer(serializers.ModelSerializer):
         return children_serializer.data
 
 
-# Use extend_schema_field to define the type for the 'children' field
+class CategorySerializerTest(serializers.ModelSerializer):
+    image = MediaFileNameSerializer()
+    children = serializers.ListField()
+
+    class Meta:
+        model = Category
+        fields = (
+            "id",
+            "image",
+            "title_ir",
+            "title_en",
+            "slug",
+            "children",
+        )
+
+
 CategorySerializer.get_children = extend_schema_field(
     serializers.ListField(child=CategorySerializer())
 )(CategorySerializer.get_children)
