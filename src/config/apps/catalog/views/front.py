@@ -1,4 +1,3 @@
-from django.core.cache import cache
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.views import APIView
@@ -20,18 +19,18 @@ class GetHeaderDataView(APIView):
     def get(self, request, *args, **kwargs):
         try:
             # Check if data is in cache
-            cached_brands = cache.get("cached_brands")
-            cached_categories = cache.get("cached_categories")
-
-            if cached_brands and cached_categories:
-                return BaseResponse(
-                    {
-                        "brands": cached_brands,
-                        "categories": cached_categories,
-                    },
-                    status=status.HTTP_200_OK,
-                    message=ResponseMessage.SUCCESS.value,
-                )
+            # cached_brands = cache.get("cached_brands")
+            # cached_categories = cache.get("cached_categories")
+            #
+            # if cached_brands and cached_categories:
+            #     return BaseResponse(
+            #         {
+            #             "brands": cached_brands,
+            #             "categories": cached_categories,
+            #         },
+            #         status=status.HTTP_200_OK,
+            #         message=ResponseMessage.SUCCESS.value,
+            #     )
 
             # If not in cache, perform the queries
             categories = (
@@ -41,13 +40,17 @@ class GetHeaderDataView(APIView):
                     "title_ir",
                     "title_en",
                     "slug",
-                    "image",
+                    "image__id",
+                    "image__file",
+                    "image__width",
+                    "image__height",
                     "tn_children_pks",
                 )
                 .select_related("image")
             )
             brands = (
-                Brand.objects.only("id", "title_ir", "title_en", "image")
+                Brand.objects.only("id", "title_ir", "title_en", "image__id", "image__file", "image__width",
+                                   "image__height")
                 .select_related("image")
                 .all()
             )
@@ -59,12 +62,12 @@ class GetHeaderDataView(APIView):
             }
 
             # Set data in cache
-            cache.set(
-                "cached_brands", response_data["brands"], timeout=None
-            )  # No expiration for brands
-            cache.set(
-                "cached_categories", response_data["categories"], timeout=None
-            )  # No expiration for categories
+            # cache.set(
+            #     "cached_brands", response_data["brands"], timeout=None
+            # )  # No expiration for brands
+            # cache.set(
+            #     "cached_categories", response_data["categories"], timeout=None
+            # )  # No expiration for categories
 
             return BaseResponse(
                 response_data,

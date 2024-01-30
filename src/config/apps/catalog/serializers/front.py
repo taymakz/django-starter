@@ -26,7 +26,17 @@ class CategorySerializer(serializers.ModelSerializer):
         child_ids_list = child_ids_str.split(",")
         # Convert the list of strings to a list of integers
         child_ids = [int(pk) for pk in child_ids_list if pk.isdigit()]
-        children_queryset = Category.objects.filter(pk__in=child_ids).select_related(
+        children_queryset = Category.objects.filter(pk__in=child_ids).only(
+            "id",
+            "title_ir",
+            "title_en",
+            "slug",
+            "image__id",
+            "image__file",
+            "image__width",
+            "image__height",
+            "tn_children_pks",
+        ).select_related(
             "image"
         )
         children_serializer = CategorySerializer(

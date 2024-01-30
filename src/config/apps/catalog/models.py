@@ -71,6 +71,16 @@ class Category(TreeNodeModel, BaseModel):
             cache_key, response_data["categories"], timeout=None
         )  # No expiration for categories
 
+    # @staticmethod
+    # def build_tree(categories, parent_id=None):
+    #     tree = []
+    #     for category in categories:
+    #         if category.tn_parent_id == parent_id:
+    #             node = CategorySerializerTest(category).data
+    #             node["children"] = self.build_tree(categories, parent_id=category.id)
+    #             tree.append(node)
+    #     return tree
+
 
 class Brand(BaseModel):
     image = models.ForeignKey(
