@@ -71,15 +71,17 @@ class Category(TreeNodeModel, BaseModel):
             cache_key, response_data["categories"], timeout=None
         )  # No expiration for categories
 
-    # @staticmethod
-    # def build_tree(categories, parent_id=None):
-    #     tree = []
-    #     for category in categories:
-    #         if category.tn_parent_id == parent_id:
-    #             node = CategorySerializerTest(category).data
-    #             node["children"] = self.build_tree(categories, parent_id=category.id)
-    #             tree.append(node)
-    #     return tree
+    @staticmethod
+    def build_tree(categories, parent_id=None):
+        from config.apps.catalog.serializers.front import CategoryTreeSerializer
+
+        tree = []
+        for category in categories:
+            if category.tn_parent_id == parent_id:
+                node = CategoryTreeSerializer(category).data
+                node["children"] = Category.build_tree(categories, parent_id=category.id)
+                tree.append(node)
+        return tree
 
 
 class Brand(BaseModel):
@@ -226,6 +228,11 @@ class Product(BaseModel):
     categories = models.ManyToManyField(Category, related_name='products', blank=True)
     brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
 
+    class Meta:
+        verbose_name = "Product"
+        verbose_name_plural = "Products"
+        ordering = ("order",)
+
     def __str__(self):
         return f"{self.title_ir}"
 
@@ -236,10 +243,8 @@ class Product(BaseModel):
         else:
             return None
 
-    class Meta:
-        verbose_name = "Product"
-        verbose_name_plural = "Products"
-        ordering = ("order",)
+    def get_absolute_url(self):
+        return f"/product/{self.upc}/{self.slug}/"
 
 
 class ProductAttributeValue(models.Model):

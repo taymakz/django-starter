@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from config.apps.catalog.models import Category
+from config.apps.catalog.serializers.front import BrandSerializer, CategorySerializer
 from config.apps.content.models import Banner
 from config.apps.media.serializers.front import MediaFileNameSerializer
 
@@ -34,4 +36,17 @@ class HomeDataSerializer(serializers.ModelSerializer):
             'products_salomon',
             'products_adidas',
             'products_newbalance',
+        )
+
+
+class HeaderDataSerializer(serializers.ModelSerializer):
+    brands = BrandSerializer(many=True)
+    categories = CategorySerializer(many=True)
+
+    class Meta:
+        model = Category
+
+        fields = (
+            "brands",
+            "categories",
         )
