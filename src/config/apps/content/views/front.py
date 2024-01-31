@@ -19,43 +19,74 @@ class GetHomeDataView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
-        try:
-            response_data = {}
-            # Check if data is in cache
-            cached_banners = cache.get("cached_banners")
-            if cached_banners:
-                response_data["banners"] = cached_banners
-            else:
-                banners = Banner.objects.all().select_related('image')
-                response_data["banners"] = BannerSerializer(banners, many=True).data
-            cached_products_nike = cache.get("products_nike")
-            if cached_products_nike:
-                response_data["products_nike"] = cached_products_nike
-            else:
-                pass
-            # Serialize the data
-            # response_data = {
-            #     "products_nike": [],
-            #     "products_salomon": [],
-            #     "products_adidas": [],
-            #     "products_newbalance": [],
-            # }
+        # try:
+        response_data = {}
+        # Check if data is in cache
+        cached_banners = cache.get("cached_banners")
+        if cached_banners:
+            response_data["banners"] = cached_banners
+        else:
+            banners = Banner.objects.all().select_related('image')
+            response_data["banners"] = BannerSerializer(banners, many=True).data
+            cache.set("cached_banners", response_data["banners"], timeout=None)
 
-            # Set data in cache
-            # cache.set(
-            #     "cached_banners", response_data["banners"], timeout=None
-            # )  # No expiration for banners
+        cached_products = cache.get("cached_brand_products")
+        if cached_products:
+            all_products = cached_products
+        else:
+            nike_brand_id = 1
+            adidas_brand_id = 2
+            salomon_brand_id = 9
+            newbalance_brand_id = 11
+            brand_ids = [nike_brand_id, adidas_brand_id, salomon_brand_id, newbalance_brand_id]
 
-            return BaseResponse(
-                response_data,
-                status=status.HTTP_200_OK,
-                message=ResponseMessage.SUCCESS.value,
-            )
+            # Sub Query for product first image
+            primary_image_subquery = ProductImage.objects.filter(
+                product=OuterRef('pk')
+            ).values('image__file')[:1]
 
-        except Exception as e:
-            return BaseResponse(
-                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
-            )
+            brand_products = (
+                Product.objects.only(
+                    'title_ir',
+                    'title_en',
+                    'slug',
+                    'upc',
+                    'brand__title_en',
+                    'brand__title_ir',
+                ).select_related('brand', 'stockrecord').filter(
+                    brand_id__in=brand_ids,
+                    is_public=True
+                ).annotate(primary_image_file=Subquery(primary_image_subquery)).exclude(
+                    structure=Product.ProductTypeChoice.child)
+                .annotate(
+                    row_number=Window(
+                        expression=RowNumber(),
+                        partition_by=F('brand__title_en'),
+                        order_by='order'
+                    )
+                )
+            ).filter(row_number__lte=10)  # Take 10 item from Each Brands
+            all_products = ProductCardSerializer(brand_products, many=True).data
+            cache.set("cached_brand_products", all_products, timeout=24 * 60 * 60)  # 1 day Cache time
+
+        response_data["products_nike"] = [product for product in all_products if product['brand']['title_en'] == 'nike']
+        response_data["products_adidas"] = [product for product in all_products if
+                                            product['brand']['title_en'] == 'adidas']
+        response_data["products_salomon"] = [product for product in all_products if
+                                             product['brand']['title_en'] == 'salomon']
+        response_data["products_newbalance"] = [product for product in all_products if
+                                                product['brand']['title_en'] == 'newbalance']
+
+        return BaseResponse(
+            response_data,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.SUCCESS.value,
+        )
+
+    # except Exception as e:
+    #     return BaseResponse(
+    #         status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+    #     )
 
 
 class GetHomeDataViewTest(APIView):
@@ -64,6 +95,10 @@ class GetHomeDataViewTest(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request, *args, **kwargs):
+        nike_brand_id = 1
+        adidas_brand_id = 2
+        salomon_brand_id = 9
+        newbalance_brand_id = 11
         # Sub Query for product first image
         primary_image_subquery = ProductImage.objects.filter(
             product=OuterRef('pk')
@@ -78,7 +113,7 @@ class GetHomeDataViewTest(APIView):
                 'brand__title_en',
                 'brand__title_ir',
             ).select_related('brand', 'stockrecord').filter(
-                brand_id__in=[1, 11],
+                brand_id__in=[nike_brand_id, adidas_brand_id, salomon_brand_id, newbalance_brand_id],
                 is_public=True
             ).annotate(primary_image_file=Subquery(primary_image_subquery)).exclude(
                 structure=Product.ProductTypeChoice.child)
@@ -89,7 +124,7 @@ class GetHomeDataViewTest(APIView):
                     order_by='order'
                 )
             )
-        ).filter(row_number__lte=1)
+        ).filter(row_number__lte=10)  # Take 10 item from Each Brands
         return BaseResponse(
             ProductCardSerializer(products_nike, many=True).data,
             status=status.HTTP_200_OK,

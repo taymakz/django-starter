@@ -7,7 +7,6 @@ class StockRecordCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockRecord
         fields = (
-            "buy_price",
             "sale_price",
             "special_sale_price",
             "special_sale_price_start_at",
