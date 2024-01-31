@@ -12,12 +12,12 @@ class BannerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
         fields = (
-            'id',
-            'image',
-            'title',
-            'position',
-            'url',
-            'is_external',
+            "id",
+            "image",
+            "title",
+            "position",
+            "url",
+            "is_external",
         )
 
 
@@ -31,11 +31,11 @@ class HomeDataSerializer(serializers.ModelSerializer):
     class Meta:
         model = Banner
         fields = (
-            'banners',
-            'products_nike',
-            'products_salomon',
-            'products_adidas',
-            'products_newbalance',
+            "banners",
+            "products_nike",
+            "products_salomon",
+            "products_adidas",
+            "products_newbalance",
         )
 
 

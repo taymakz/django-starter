@@ -49,7 +49,7 @@ class Banner(BaseModel):
         cache.delete(cache_key)
 
         # Recompute the data and set it in cache
-        banners = Banner.objects.all().select_related('image')
+        banners = Banner.objects.all().select_related("image")
 
         from config.apps.content.serializers.front import BannerSerializer
 

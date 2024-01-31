@@ -104,9 +104,9 @@ def create_signal(sender, instance: Media, **kwargs):
         old_height = old_object.height
 
         if (
-                new_image != old_image
-                or (new_width != old_width)
-                or (new_height != old_height)
+            new_image != old_image
+            or (new_width != old_width)
+            or (new_height != old_height)
         ):
             if instance.file and (instance.resize_width and instance.resize_height):
                 # Get resize dimensions

@@ -79,7 +79,9 @@ class Category(TreeNodeModel, BaseModel):
         for category in categories:
             if category.tn_parent_id == parent_id:
                 node = CategoryTreeSerializer(category).data
-                node["children"] = Category.build_tree(categories, parent_id=category.id)
+                node["children"] = Category.build_tree(
+                    categories, parent_id=category.id
+                )
                 tree.append(node)
         return tree
 
@@ -183,16 +185,24 @@ class ProductClass(models.Model):
 
 class ProductAttribute(models.Model):
     class AttributeTypeChoice(models.TextChoices):
-        text = 'text'
-        integer = 'integer'
-        float = 'float'
-        option = 'option'
-        multi_option = 'multi_option'
+        text = "text"
+        integer = "integer"
+        float = "float"
+        option = "option"
+        multi_option = "multi_option"
 
-    product_class = models.ForeignKey(ProductClass, on_delete=models.CASCADE, null=True, related_name='attributes')
+    product_class = models.ForeignKey(
+        ProductClass, on_delete=models.CASCADE, null=True, related_name="attributes"
+    )
     title = models.CharField(max_length=64)
-    type = models.CharField(max_length=16, choices=AttributeTypeChoice.choices, default=AttributeTypeChoice.text)
-    option_group = models.ForeignKey(OptionGroup, on_delete=models.PROTECT, null=True, blank=True)
+    type = models.CharField(
+        max_length=16,
+        choices=AttributeTypeChoice.choices,
+        default=AttributeTypeChoice.text,
+    )
+    option_group = models.ForeignKey(
+        OptionGroup, on_delete=models.PROTECT, null=True, blank=True
+    )
     required = models.BooleanField(default=False)
 
     def __str__(self):
@@ -205,12 +215,18 @@ class ProductAttribute(models.Model):
 
 class Product(BaseModel):
     class ProductTypeChoice(models.TextChoices):
-        standalone = 'standalone'
-        parent = 'parent'
-        child = 'child'
+        standalone = "standalone"
+        parent = "parent"
+        child = "child"
 
-    structure = models.CharField(max_length=16, choices=ProductTypeChoice.choices, default=ProductTypeChoice.standalone)
-    parent = models.ForeignKey("self", related_name="children", on_delete=models.CASCADE, null=True, blank=True)
+    structure = models.CharField(
+        max_length=16,
+        choices=ProductTypeChoice.choices,
+        default=ProductTypeChoice.standalone,
+    )
+    parent = models.ForeignKey(
+        "self", related_name="children", on_delete=models.CASCADE, null=True, blank=True
+    )
     order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
 
     title_ir = models.CharField(max_length=255, null=True, blank=True)
@@ -221,12 +237,23 @@ class Product(BaseModel):
     meta_title = models.CharField(max_length=128, null=True, blank=True)
     meta_description = models.TextField(null=True, blank=True)
 
-    product_class = models.ForeignKey(ProductClass, on_delete=models.PROTECT, null=True, blank=True,
-                                      related_name='products')
-    attributes = models.ManyToManyField(ProductAttribute, through='ProductAttributeValue')
-    recommended_products = models.ManyToManyField('catalog.Product', through='ProductRecommendation', blank=True)
-    categories = models.ManyToManyField(Category, related_name='products', blank=True)
-    brand = models.ForeignKey(Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name='products')
+    product_class = models.ForeignKey(
+        ProductClass,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="products",
+    )
+    attributes = models.ManyToManyField(
+        ProductAttribute, through="ProductAttributeValue"
+    )
+    recommended_products = models.ManyToManyField(
+        "catalog.Product", through="ProductRecommendation", blank=True
+    )
+    categories = models.ManyToManyField(Category, related_name="products", blank=True)
+    brand = models.ForeignKey(
+        Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+    )
 
     class Meta:
         verbose_name = "Product"
@@ -235,6 +262,10 @@ class Product(BaseModel):
 
     def __str__(self):
         return f"{self.title_ir}"
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        cache.delete("cached_brand_products")
 
     @property
     def main_image(self):
@@ -254,34 +285,41 @@ class ProductAttributeValue(models.Model):
     value_text = models.TextField(null=True, blank=True)
     value_integer = models.IntegerField(null=True, blank=True)
     value_float = models.FloatField(null=True, blank=True)
-    value_option = models.ForeignKey(OptionGroupValue, on_delete=models.PROTECT, null=True, blank=True)
-    value_multi_option = models.ManyToManyField(OptionGroupValue, blank=True,
-                                                related_name='multi_valued_attribute_value')
+    value_option = models.ForeignKey(
+        OptionGroupValue, on_delete=models.PROTECT, null=True, blank=True
+    )
+    value_multi_option = models.ManyToManyField(
+        OptionGroupValue, blank=True, related_name="multi_valued_attribute_value"
+    )
 
     class Meta:
         verbose_name = "Attribute Value"
         verbose_name_plural = "Attribute Values"
-        unique_together = ('product', 'attribute')
+        unique_together = ("product", "attribute")
 
 
 class ProductRecommendation(models.Model):
-    primary = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='primary_recommendation')
+    primary = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="primary_recommendation"
+    )
     recommendation = models.ForeignKey(Product, on_delete=models.CASCADE)
     rank = models.PositiveSmallIntegerField(default=0)
 
     class Meta:
-        unique_together = ('primary', 'recommendation')
-        ordering = ('primary', '-rank')
+        unique_together = ("primary", "recommendation")
+        ordering = ("primary", "-rank")
 
 
 class ProductImage(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='images')
-    image = models.ForeignKey('media.Media', on_delete=models.PROTECT)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="images"
+    )
+    image = models.ForeignKey("media.Media", on_delete=models.PROTECT)
 
     order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering = ('order',)
+        ordering = ("order",)
 
     def delete(self, *args, **kwargs):
         super().delete(*args, **kwargs)

@@ -29,5 +29,5 @@ class BannerAdmin(admin.ModelAdmin):
     @staticmethod
     def is_showing(obj: Banner) -> bool:
         return (obj.is_public and not obj.is_deleted) and (
-                (obj.start_at and obj.expire_at) and (obj.start_at <= obj.expire_at)
+            (obj.start_at and obj.expire_at) and (obj.start_at <= obj.expire_at)
         )

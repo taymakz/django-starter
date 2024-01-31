@@ -30,15 +30,15 @@ class CategorySerializer(serializers.Serializer):
     children = serializers.ListField(child=serializers.DictField(), default=[])
 
     def get_image(self, obj):
-        return {'name': obj.get('image', {}).get('name', '')}
+        return {"name": obj.get("image", {}).get("name", "")}
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation['children'] = self.many_nested(instance)
+        representation["children"] = self.many_nested(instance)
         return representation
 
     def many_nested(self, instance):
-        children = instance.get('children', [])
+        children = instance.get("children", [])
         serializer = self.__class__(children, many=True)
         return serializer.data
 
@@ -66,7 +66,7 @@ class ProductCardBrandSerializer(serializers.ModelSerializer):
 
 
 class ProductCardSerializer(serializers.ModelSerializer):
-    url = serializers.CharField(source='get_absolute_url')
+    url = serializers.CharField(source="get_absolute_url")
     stockrecord = StockRecordCardSerializer()
     image = serializers.SerializerMethodField()
     brand = ProductCardBrandSerializer()
@@ -74,14 +74,14 @@ class ProductCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
-            'image',
-            'title_ir',
-            'title_en',
-            'slug',
-            'upc',
-            'url',
-            'stockrecord',
-            'brand',
+            "image",
+            "title_ir",
+            "title_en",
+            "slug",
+            "upc",
+            "url",
+            "stockrecord",
+            "brand",
         )
 
     def get_image(self, obj):
