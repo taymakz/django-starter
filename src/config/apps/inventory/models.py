@@ -23,13 +23,26 @@ class StockRecord(models.Model):
         return f"{self.sku}"
 
     @property
-    def get_price(self):
+    def has_special_price_with_date(self) -> bool:
+        return self.special_sale_price and self.special_sale_price_start_at
+
+    @property
+    def is_special_price_dates_valid(self) -> bool:
+        if self.special_sale_price_start_at and not self.special_sale_price_end_at:
+            return self.special_sale_price_start_at <= now()
+        elif self.special_sale_price_start_at and self.special_sale_price_end_at:
+            return self.special_sale_price_start_at <= now() <= self.special_sale_price_end_at
+        else:
+            return False
+
+    @property
+    def get_price(self) -> int:
         if (
-            self.special_sale_price
-            and self.special_sale_price_start_at
-            and self.special_sale_price_end_at
+                self.special_sale_price
+                and self.special_sale_price_start_at
+                and self.special_sale_price_end_at
         ) and (
-            self.special_sale_price_start_at <= now() <= self.special_sale_price_end_at
+                self.special_sale_price_start_at <= now() <= self.special_sale_price_end_at
         ):
             return self.special_sale_price
         else:
