@@ -139,6 +139,11 @@ class ProductStockRecordInline(admin.TabularInline):
     extra = 0
 
 
+class ProductChildInline(admin.StackedInline):
+    model = Product
+    extra = 0
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     inlines = [
@@ -146,6 +151,7 @@ class ProductAdmin(admin.ModelAdmin):
         ProductImageInline,
         ProductRecommendationInline,
         ProductStockRecordInline,
+        ProductChildInline
     ]
     raw_id_fields = ["parent"]
     prepopulated_fields = {"slug": ("title_en",)}
