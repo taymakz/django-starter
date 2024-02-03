@@ -145,6 +145,14 @@ class Brand(BaseModel):
 class OptionGroup(models.Model):
     title = models.CharField(max_length=255, db_index=True)
 
+    filter_contain = models.BooleanField(default=False)
+    filter_param_name = models.CharField(max_length=20, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        # Call the parent class's save method
+        super().save(*args, **kwargs)
+        self.re_new_cache()
+
     def __str__(self):
         return self.title
 
@@ -152,12 +160,32 @@ class OptionGroup(models.Model):
         verbose_name = "Option Group"
         verbose_name_plural = "Option Groups"
 
+    @staticmethod
+    def re_new_cache():
+        # If something changes, renew the cache for brands
+        cache_key = "cached_filterOptions"
+        cache.delete(cache_key)
+
+        # Recompute the data and set it in cache
+        options = OptionGroup.objects.filter(filter_contain=True).prefetch_related('option_group_values').all()
+        from config.apps.catalog.serializers.front import SearchFilterOptionSerializer
+        data = SearchFilterOptionSerializer(options, many=True).data
+
+        cache.set(
+            cache_key, data, timeout=None
+        )  # No expiration for brands
+
 
 class OptionGroupValue(models.Model):
     title = models.CharField(max_length=255, db_index=True)
-    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE)
+    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE, related_name='option_group_values')
 
     color_code = models.CharField(max_length=10, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Call the parent class's save method
+        super().save(*args, **kwargs)
+        OptionGroup.re_new_cache()
 
     def __str__(self):
         return self.title
@@ -228,18 +256,17 @@ class Product(BaseModel):
         max_length=16,
         choices=ProductTypeChoice.choices,
         default=ProductTypeChoice.standalone,
-        db_index=True,
     )
     parent = models.ForeignKey(
-        "self", related_name="children", on_delete=models.CASCADE, db_index=True, null=True, blank=True
+        "self", related_name="children", on_delete=models.CASCADE, null=True, blank=True
     )
     order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
 
     title_ir = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     title_en = models.CharField(max_length=255, db_index=True, null=True, blank=True)
-    slug = models.SlugField(unique=True, allow_unicode=True, db_index=True, null=True, blank=True)
+    slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
-    is_public = models.BooleanField(default=True, db_index=True)
+    is_public = models.BooleanField(default=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
     meta_description = models.TextField(null=True, blank=True)
 
