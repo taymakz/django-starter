@@ -53,6 +53,7 @@ class BrandSerializer(serializers.ModelSerializer):
             "image",
             "title_ir",
             "title_en",
+            "slug",
         )
 
 
@@ -62,6 +63,7 @@ class ProductCardBrandSerializer(serializers.ModelSerializer):
         fields = (
             "title_ir",
             "title_en",
+            "slug",
         )
 
 

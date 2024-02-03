@@ -1,0 +1,115 @@
+from django.db.models import Q, Case, When, IntegerField, F
+from django.db.models.functions import Now
+from django.utils.timezone import now
+from django_filters import rest_framework as filters
+
+from config.apps.catalog.models import Product
+
+
+class ProductFilter(filters.FilterSet):
+    search = filters.CharFilter(method='filter_search', label='Search')
+    categorySlug = filters.CharFilter(method='filter_category')
+    brands = filters.CharFilter(method='filter_brands')
+    colors = filters.CharFilter(method='filter_colors')
+    sizes = filters.CharFilter(method='filter_sizes')
+    sort = filters.NumberFilter(method='filter_sort')
+    available = filters.BooleanFilter(field_name='stockrecord__num_stock', method='filter_availability')
+    special = filters.BooleanFilter(method='filter_special')
+
+    class Meta:
+        model = Product
+        fields = ['search', 'categories', 'brand', 'colors', 'sizes']
+
+    def filter_search(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                Q(title_ir__icontains=value) |
+                Q(title_en__icontains=value) |
+                Q(slug__icontains=value) |
+                Q(upc__icontains=value)
+            )
+        return queryset
+
+    def filter_category(self, queryset, name, value):
+        if value:
+            queryset = queryset.filter(
+                Q(categories__slug__iexact=value) |
+                Q(parent__categories__slug__iexact=value) |
+                Q(children__categories__slug__iexact=value),
+                structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
+            ).distinct()
+        return queryset
+
+    def filter_brands(self, queryset, name, value):
+        brand_ids = [int(x) for x in value.split(',')]
+        return queryset.filter(brand__id__in=brand_ids)
+
+    def filter_colors(self, queryset, name, value):
+        color_ids = [int(x) for x in value.split(',')]
+
+        return queryset.filter(
+            Q(productattributevalue__value_option_id__in=color_ids) |
+            Q(parent__productattributevalue__value_option_id__in=color_ids) |
+            Q(children__productattributevalue__value_option_id__in=color_ids),
+            structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
+        ).distinct()
+
+    def filter_sizes(self, queryset, name, value):
+        size_ids = [int(x) for x in value.split(',')]
+        return queryset.filter(
+            Q(productattributevalue__value_option_id__in=size_ids) |
+            Q(parent__productattributevalue__value_option_id__in=size_ids) |
+            Q(children__productattributevalue__value_option_id__in=size_ids),
+            structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
+        ).distinct()
+
+    def filter_sort(self, queryset, name, value):
+        if value == 1:  # Newest
+            return queryset.order_by('-created_at')
+        elif value == 2:  # Sale
+            return queryset.filter(stockrecord__special_sale_price__isnull=False).order_by(
+                '-stockrecord__special_sale_price')
+        elif value == 3:  # Expensive
+            return queryset.annotate(
+                price=Case(
+                    When(
+                        stockrecord__special_sale_price__isnull=False,
+                        stockrecord__special_sale_price_start_at__lte=now(),
+                        stockrecord__special_sale_price_end_at__gte=now(),
+                        then=F('stockrecord__special_sale_price'),
+                    ),
+                    default=F('stockrecord__sale_price'),
+                    output_field=IntegerField(),
+                )
+            ).order_by('-price')
+        elif value == 4:  # Cheap
+            return queryset.annotate(
+                price=Case(
+                    When(
+                        stockrecord__special_sale_price__isnull=False,
+                        stockrecord__special_sale_price_start_at__lte=now(),
+                        stockrecord__special_sale_price_end_at__gte=now(),
+                        then=F('stockrecord__special_sale_price'),
+                    ),
+                    default=F('stockrecord__sale_price'),
+                    output_field=IntegerField(),
+                )
+            ).order_by('price')
+        return queryset
+
+    def filter_availability(self, queryset, name, value):
+        if value:
+            return queryset.filter(stockrecord__num_stock__gt=0)
+        return queryset
+
+    def filter_special(self, queryset, name, value):
+        if value:
+            now = Now()
+            return queryset.filter(
+                Q(stockrecord__special_sale_price_start_at__isnull=True) |
+                Q(stockrecord__special_sale_price_start_at__lte=now),
+                Q(stockrecord__special_sale_price_end_at__isnull=True) |
+                Q(stockrecord__special_sale_price_end_at__gte=now),
+                stockrecord__special_sale_price__isnull=False,
+            )
+        return queryset

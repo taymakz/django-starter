@@ -19,7 +19,7 @@ class Category(TreeNodeModel, BaseModel):
 
     description = models.CharField(max_length=2048, null=True, blank=True)
     is_public = models.BooleanField(default=True)
-    slug = models.SlugField(unique=True, allow_unicode=True)
+    slug = models.SlugField(unique=True, allow_unicode=True, db_index=True)
     order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
 
     treenode_display_field = "title_en"
@@ -27,7 +27,7 @@ class Category(TreeNodeModel, BaseModel):
     def save(self, *args, **kwargs):
         # Call the parent class's save method
         super().save(*args, **kwargs)
-        # self.re_new_cache()
+        self.re_new_cache()
 
     def __str__(self):
         if self.tn_parent:
@@ -48,23 +48,27 @@ class Category(TreeNodeModel, BaseModel):
 
         # Recompute the data and set it in cache
         categories = (
-            Category.objects.filter(tn_level=1)
+            Category.objects.filter(is_public=True)
             .only(
                 "id",
+                "tn_parent_id",
+                "tn_children_pks",
                 "title_ir",
                 "title_en",
-                "order",
                 "slug",
-                "image",
-                "tn_children_pks",
+                "image__id",
+                "image__file",
+                "image__width",
+                "image__height",
             )
             .select_related("image")
-        )
-
+        ).order_by("tn_level")
         from config.apps.catalog.serializers.front import CategorySerializer
 
         response_data = {
-            "categories": CategorySerializer(categories, many=True).data,
+            "categories": CategorySerializer(
+                Category.build_tree(categories=categories), many=True
+            ).data
         }
 
         cache.set(
@@ -96,13 +100,14 @@ class Brand(BaseModel):
     )
     title_ir = models.CharField(max_length=55)
     title_en = models.CharField(max_length=55)
+    slug = models.SlugField(unique=True, allow_unicode=True, db_index=True, null=True)
 
     order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         # Call the parent class's save method
         super().save(*args, **kwargs)
-        # self.re_new_cache()
+        self.re_new_cache()
 
     class Meta:
         db_table = "brands"
@@ -223,17 +228,18 @@ class Product(BaseModel):
         max_length=16,
         choices=ProductTypeChoice.choices,
         default=ProductTypeChoice.standalone,
+        db_index=True,
     )
     parent = models.ForeignKey(
-        "self", related_name="children", on_delete=models.CASCADE, null=True, blank=True
+        "self", related_name="children", on_delete=models.CASCADE, db_index=True, null=True, blank=True
     )
     order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
 
-    title_ir = models.CharField(max_length=255, null=True, blank=True)
-    title_en = models.CharField(max_length=255, null=True, blank=True)
-    slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
+    title_ir = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    title_en = models.CharField(max_length=255, db_index=True, null=True, blank=True)
+    slug = models.SlugField(unique=True, allow_unicode=True, db_index=True, null=True, blank=True)
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
-    is_public = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=True, db_index=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
     meta_description = models.TextField(null=True, blank=True)
 
@@ -250,12 +256,13 @@ class Product(BaseModel):
     recommended_products = models.ManyToManyField(
         "catalog.Product", through="ProductRecommendation", blank=True
     )
-    categories = models.ManyToManyField(Category, related_name="products", blank=True)
+    categories = models.ManyToManyField(Category, related_name="products", db_index=True, blank=True)
     brand = models.ForeignKey(
-        Brand, on_delete=models.SET_NULL, null=True, blank=True, related_name="products"
+        Brand, on_delete=models.SET_NULL, db_index=True, null=True, blank=True, related_name="products"
     )
 
     class Meta:
+
         verbose_name = "Product"
         verbose_name_plural = "Products"
         ordering = ("order",)

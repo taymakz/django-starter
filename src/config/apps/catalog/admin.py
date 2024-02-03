@@ -47,8 +47,9 @@ class CategoryAdmin(TreeNodeModelAdmin):
 
 @admin.register(Brand)
 class BrandAdmin(admin.ModelAdmin):
-    list_display = ["__str__", "title_ir", "title_en", "order", "image", "file"]
-    list_editable = ["title_ir", "title_en", "order", "image"]
+    list_display = ["__str__", "title_ir", "title_en", "slug", "order", "image", "file"]
+    list_editable = ["title_ir", "title_en", "slug", "order", "image"]
+    prepopulated_fields = {"slug": ("title_en",)}
 
     @staticmethod
     def file(obj: Category):

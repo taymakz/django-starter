@@ -66,11 +66,12 @@ class GetHomeDataView(APIView):
                         "upc",
                         "brand__title_en",
                         "brand__title_ir",
+                        "brand__slug",
                     )
                     .select_related("brand", "stockrecord")
-                    .filter(brand_id__in=brand_ids, is_public=True)
+                    .filter(brand_id__in=brand_ids, is_public=True,
+                            structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent])
                     .annotate(primary_image_file=Subquery(primary_image_subquery))
-                    .exclude(structure=Product.ProductTypeChoice.child)
                     .annotate(
                         row_number=Window(
                             expression=RowNumber(),
@@ -119,59 +120,6 @@ class GetHomeDataView(APIView):
             )
 
 
-class GetHomeDataViewTest(APIView):
-    serializer_class = ProductCardSerializer
-    authentication_classes = []
-    permission_classes = [AllowAny]
-
-    def get(self, request, *args, **kwargs):
-        nike_brand_id = 1
-        adidas_brand_id = 2
-        salomon_brand_id = 9
-        newbalance_brand_id = 11
-        # Sub Query for product first image
-        primary_image_subquery = ProductImage.objects.filter(
-            product=OuterRef("pk")
-        ).values("image__file")[:1]
-
-        products_nike = (
-            Product.objects.only(
-                "title_ir",
-                "title_en",
-                "slug",
-                "upc",
-                "brand__title_en",
-                "brand__title_ir",
-            )
-            .select_related("brand", "stockrecord")
-            .filter(
-                brand_id__in=[
-                    nike_brand_id,
-                    adidas_brand_id,
-                    salomon_brand_id,
-                    newbalance_brand_id,
-                ],
-                is_public=True,
-            )
-            .annotate(primary_image_file=Subquery(primary_image_subquery))
-            .exclude(structure=Product.ProductTypeChoice.child)
-            .annotate(
-                row_number=Window(
-                    expression=RowNumber(),
-                    partition_by=F("brand__title_en"),
-                    order_by="order",
-                )
-            )
-        ).filter(
-            row_number__lte=10
-        )  # Take 10 item from Each Brands
-        return BaseResponse(
-            ProductCardSerializer(products_nike, many=True).data,
-            status=status.HTTP_200_OK,
-            message=ResponseMessage.SUCCESS.value,
-        )
-
-
 class GetHeaderDataView(APIView):
     serializer_class = HeaderDataSerializer
     authentication_classes = []
@@ -216,6 +164,7 @@ class GetHeaderDataView(APIView):
                     "id",
                     "title_ir",
                     "title_en",
+                    "slug",
                     "image__id",
                     "image__file",
                     "image__width",
