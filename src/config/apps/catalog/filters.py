@@ -9,16 +9,16 @@ from config.apps.catalog.models import Product
 class ProductFilter(filters.FilterSet):
     search = filters.CharFilter(method='filter_search', label='Search')
     categorySlug = filters.CharFilter(method='filter_category')
-    brands = filters.CharFilter(method='filter_brands')
-    colors = filters.CharFilter(method='filter_colors')
-    sizes = filters.CharFilter(method='filter_sizes')
+    brand = filters.CharFilter(method='filter_brand')
+    color = filters.CharFilter(method='filter_color')
+    size = filters.CharFilter(method='filter_size')
     sort = filters.NumberFilter(method='filter_sort')
     available = filters.BooleanFilter(field_name='stockrecord__num_stock', method='filter_availability')
     special = filters.BooleanFilter(method='filter_special')
 
     class Meta:
         model = Product
-        fields = ['search', 'categories', 'brand', 'colors', 'sizes']
+        fields = ['search', 'categories', 'brand', 'color', 'size']
 
     def filter_search(self, queryset, name, value):
         if value:
@@ -40,11 +40,11 @@ class ProductFilter(filters.FilterSet):
             ).distinct()
         return queryset
 
-    def filter_brands(self, queryset, name, value):
+    def filter_brand(self, queryset, name, value):
         brand_ids = [int(x) for x in value.split(',')]
         return queryset.filter(brand__id__in=brand_ids)
 
-    def filter_colors(self, queryset, name, value):
+    def filter_color(self, queryset, name, value):
         color_ids = [int(x) for x in value.split(',')]
 
         return queryset.filter(
@@ -54,7 +54,7 @@ class ProductFilter(filters.FilterSet):
             structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
         ).distinct()
 
-    def filter_sizes(self, queryset, name, value):
+    def filter_size(self, queryset, name, value):
         size_ids = [int(x) for x in value.split(',')]
         return queryset.filter(
             Q(productattributevalue__value_option_id__in=size_ids) |
@@ -99,7 +99,11 @@ class ProductFilter(filters.FilterSet):
 
     def filter_availability(self, queryset, name, value):
         if value:
-            return queryset.filter(stockrecord__num_stock__gt=0)
+            return queryset.filter(
+
+                Q(stockrecord__num_stock__gt=0, product_class__track_stock=True) |
+                Q(product_class__track_stock=False),
+            )
         return queryset
 
     def filter_special(self, queryset, name, value):
