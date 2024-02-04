@@ -12,13 +12,14 @@ class ProductFilter(filters.FilterSet):
     brand = filters.CharFilter(method='filter_brand')
     color = filters.CharFilter(method='filter_color')
     size = filters.CharFilter(method='filter_size')
+    gender = filters.CharFilter(method='filter_gender')
     sort = filters.NumberFilter(method='filter_sort')
     available = filters.BooleanFilter(field_name='stockrecord__num_stock', method='filter_availability')
     special = filters.BooleanFilter(method='filter_special')
 
     class Meta:
         model = Product
-        fields = ['search', 'categories', 'brand', 'color', 'size']
+        fields = ['search', 'categories', 'brand', 'color', 'size', 'gender']
 
     def filter_search(self, queryset, name, value):
         if value:
@@ -53,6 +54,10 @@ class ProductFilter(filters.FilterSet):
             Q(children__productattributevalue__value_option_id__in=color_ids),
             structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
         ).distinct()
+
+    def filter_gender(self, queryset, name, value):
+        genders_ids = [int(x) for x in value.split(',')]
+        return queryset.filter(categories__id__in=genders_ids)
 
     def filter_size(self, queryset, name, value):
         size_ids = [int(x) for x in value.split(',')]
