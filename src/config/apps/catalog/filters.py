@@ -12,6 +12,7 @@ class ProductFilter(filters.FilterSet):
     brand = filters.CharFilter(method='filter_brand')
     color = filters.CharFilter(method='filter_color')
     size = filters.CharFilter(method='filter_size')
+    price = filters.CharFilter(method='filter_price')
     gender = filters.CharFilter(method='filter_gender')
     sort = filters.NumberFilter(method='filter_sort')
     available = filters.BooleanFilter(field_name='stockrecord__num_stock', method='filter_availability')
@@ -19,7 +20,7 @@ class ProductFilter(filters.FilterSet):
 
     class Meta:
         model = Product
-        fields = ['search', 'categories', 'brand', 'color', 'size', 'gender']
+        fields = ['search', 'categories', 'brand', 'color', 'size', 'gender', 'price']
 
     def filter_search(self, queryset, name, value):
         if value:
@@ -39,6 +40,25 @@ class ProductFilter(filters.FilterSet):
                 Q(children__categories__slug__iexact=value),
                 structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent]
             ).distinct()
+        return queryset
+
+    def filter_price(self, queryset, name, value):
+        if value:
+            # Extract the min and max values from the range
+            min_price, max_price = [int(x) for x in value.split(',')]
+            return queryset.annotate(
+                final_price=Case(
+                    When(
+                        stockrecord__special_sale_price__isnull=False,
+                        stockrecord__special_sale_price_start_at__lte=now(),
+                        stockrecord__special_sale_price_end_at__gte=now(),
+                        then=F('stockrecord__special_sale_price'),
+                    ),
+                    default=F('stockrecord__sale_price'),
+                    output_field=IntegerField(),
+                )
+            ).filter(final_price__gte=min_price, final_price__lte=max_price)
+
         return queryset
 
     def filter_brand(self, queryset, name, value):
