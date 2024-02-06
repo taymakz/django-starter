@@ -14,7 +14,7 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductImage,
     OptionGroupValue,
-    OptionGroup,
+    OptionGroup, ProductProperty, ProductPropertyValue,
 )
 from config.apps.inventory.models import StockRecord
 
@@ -59,6 +59,11 @@ class BrandAdmin(admin.ModelAdmin):
             )
         else:
             return ""
+
+
+@admin.register(ProductProperty)
+class ProductPropertyAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(OptionGroup)
@@ -145,9 +150,15 @@ class ProductChildInline(admin.StackedInline):
     extra = 0
 
 
+class ProductPropertyValueInline(admin.TabularInline):
+    model = ProductPropertyValue
+    extra = 0
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
     inlines = [
+        ProductPropertyValueInline,
         ProductAttributeValueInline,
         ProductImageInline,
         ProductRecommendationInline,

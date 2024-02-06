@@ -200,7 +200,7 @@ class ProductClass(models.Model):
     title_en = models.CharField(max_length=255, db_index=True)
     description = models.CharField(max_length=2048, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, db_index=True)
-
+    properties = models.ManyToManyField('ProductProperty')
     track_stock = models.BooleanField(default=True)
     require_shipping = models.BooleanField(default=True)
 
@@ -265,6 +265,7 @@ class Product(BaseModel):
     title_ir = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     title_en = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
+    
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
     is_public = models.BooleanField(default=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
