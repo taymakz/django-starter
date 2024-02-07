@@ -170,18 +170,23 @@ class OptionGroup(models.Model):
         cache.delete(cache_key)
 
         # Recompute the data and set it in cache
-        options = OptionGroup.objects.filter(filter_contain=True).prefetch_related('option_group_values').all()
+        options = (
+            OptionGroup.objects.filter(filter_contain=True)
+            .prefetch_related("option_group_values")
+            .all()
+        )
         from config.apps.catalog.serializers.front import SearchFilterOptionSerializer
+
         data = SearchFilterOptionSerializer(options, many=True).data
 
-        cache.set(
-            cache_key, data, timeout=None
-        )  # No expiration for brands
+        cache.set(cache_key, data, timeout=None)  # No expiration for brands
 
 
 class OptionGroupValue(models.Model):
     title = models.CharField(max_length=255, db_index=True)
-    group = models.ForeignKey(OptionGroup, on_delete=models.CASCADE, related_name='option_group_values')
+    group = models.ForeignKey(
+        OptionGroup, on_delete=models.CASCADE, related_name="option_group_values"
+    )
 
     color_code = models.CharField(max_length=10, null=True, blank=True)
 
@@ -203,7 +208,7 @@ class ProductClass(models.Model):
     title_en = models.CharField(max_length=255, db_index=True)
     description = models.CharField(max_length=2048, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, db_index=True)
-    properties = models.ManyToManyField('ProductProperty')
+    properties = models.ManyToManyField("ProductProperty")
     track_stock = models.BooleanField(default=True)
     require_shipping = models.BooleanField(default=True)
 
@@ -268,7 +273,9 @@ class Product(BaseModel):
     title_ir = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     title_en = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
-    short_slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True, editable=False)
+    short_slug = models.SlugField(
+        unique=True, allow_unicode=True, null=True, blank=True, editable=False
+    )
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
     is_public = models.BooleanField(default=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
@@ -287,13 +294,19 @@ class Product(BaseModel):
     recommended_products = models.ManyToManyField(
         "catalog.Product", through="ProductRecommendation", blank=True
     )
-    categories = models.ManyToManyField(Category, related_name="products", db_index=True, blank=True)
+    categories = models.ManyToManyField(
+        Category, related_name="products", db_index=True, blank=True
+    )
     brand = models.ForeignKey(
-        Brand, on_delete=models.SET_NULL, db_index=True, null=True, blank=True, related_name="products"
+        Brand,
+        on_delete=models.SET_NULL,
+        db_index=True,
+        null=True,
+        blank=True,
+        related_name="products",
     )
 
     class Meta:
-
         verbose_name = "Product"
         verbose_name_plural = "Products"
         ordering = ("order",)
@@ -305,7 +318,7 @@ class Product(BaseModel):
         if not self.short_slug and self.structure != self.ProductTypeChoice.child:
             # Generate a unique random 5-digit number
             while True:
-                random_short_slug = ''.join(random.choices(string.digits, k=5))
+                random_short_slug = "".join(random.choices(string.digits, k=5))
                 if not Product.objects.filter(short_slug=random_short_slug).exists():
                     self.short_slug = random_short_slug
                     break
@@ -320,11 +333,13 @@ class Product(BaseModel):
             return None
 
     def get_absolute_url(self):
-        return f"/product/{self.upc}/{self.slug}/"
+        return f"/product/{self.short_slug}/{self.slug}/"
 
 
 class ProductAttributeValue(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="attribute_values"
+    )
     attribute = models.ForeignKey(ProductAttribute, on_delete=models.CASCADE)
 
     value_text = models.TextField(null=True, blank=True)
@@ -341,6 +356,12 @@ class ProductAttributeValue(models.Model):
         verbose_name = "Attribute Value"
         verbose_name_plural = "Attribute Values"
         unique_together = ("product", "attribute")
+
+    @property
+    def get_value(self):
+        attribute_type = self.attribute.type
+        value_attr_name = f"value_{attribute_type}"
+        return getattr(self, value_attr_name, None)
 
 
 class ProductRecommendation(models.Model):

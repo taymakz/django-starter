@@ -1,7 +1,19 @@
 from rest_framework import serializers
 
-from config.apps.catalog.models import Category, Brand, Product, OptionGroup, OptionGroupValue
-from config.apps.inventory.serializers.front import StockRecordCardSerializer
+from config.apps.catalog.models import (
+    Category,
+    Brand,
+    Product,
+    OptionGroup,
+    OptionGroupValue,
+    ProductAttributeValue,
+    ProductAttribute,
+    ProductImage,
+)
+from config.apps.inventory.serializers.front import (
+    StockRecordCardSerializer,
+    StockRecordSerializer,
+)
 from config.apps.media.serializers.front import MediaFileNameSerializer
 
 
@@ -79,8 +91,6 @@ class ProductCardSerializer(serializers.ModelSerializer):
             "image",
             "title_ir",
             "title_en",
-            "slug",
-            "short_slug",
             "url",
             "stockrecord",
             "brand",
@@ -105,9 +115,123 @@ class SearchFilterOptionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OptionGroup
+        fields = ("id", "title", "filter_param_name", "option_group_values")
+
+
+class ProductOptionGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OptionGroup
         fields = (
             "id",
             "title",
-            "filter_param_name",
-            "option_group_values"
         )
+
+
+class ProductAttributeSerializer(serializers.ModelSerializer):
+    option_group = ProductOptionGroupSerializer()
+
+    class Meta:
+        model = ProductAttribute
+        fields = (
+            "title",
+            "type",
+            "option_group",
+            "required",
+        )
+
+
+class ProductOptionGroupValueSerializer(serializers.ModelSerializer):
+    group = ProductOptionGroupSerializer()
+
+    class Meta:
+        model = OptionGroupValue
+        fields = (
+            "id",
+            "title",
+            "color_code",
+            "group",
+        )
+
+
+class ProductAttributeValueSerializer(serializers.ModelSerializer):
+    # value = serializers.SerializerMethodField()
+    attribute = ProductAttributeSerializer()
+    value_option = ProductOptionGroupValueSerializer()
+    value_multi_option = ProductOptionGroupValueSerializer(many=True)
+
+    class Meta:
+        model = ProductAttributeValue
+        fields = (
+            "attribute",
+            "value_text",
+            "value_integer",
+            "value_float",
+            "value_option",
+            "value_multi_option",
+        )
+
+    # def get_value(self, obj: ProductAttributeValue):
+    #     return obj.get_value
+
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    image = MediaFileNameSerializer()
+
+    class Meta:
+        model = ProductImage
+        fields = ("id", "image")
+
+
+class ProductCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = (
+            "id",
+            "title_ir",
+            "slug",
+        )
+
+
+class ProductDetailChildrenSerializer(serializers.ModelSerializer):
+    stockrecord = StockRecordSerializer()
+    images = ProductImageSerializer(many=True)
+    attribute_values = ProductAttributeValueSerializer(many=True)
+
+    class Meta:
+        model = Product
+        fields = (
+            "stockrecord",
+            "attribute_values",
+            "images",
+        )
+
+
+# product Detail
+class ProductDetailSerializer(serializers.ModelSerializer):
+    # children = ProductDetailChildrenSerializer(many=True)
+    attribute_values = ProductAttributeValueSerializer(many=True)
+    stockrecord = StockRecordSerializer()
+    images = ProductImageSerializer(many=True)
+    brand = BrandSerializer()
+
+    class Meta:
+        model = Product
+        fields = (
+            "structure",
+            # "children",
+            "attribute_values",
+            "images",
+            "title_ir",
+            "title_en",
+            "stockrecord",
+            "brand",
+            "meta_title",
+            "meta_description",
+        )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.structure != Product.ProductTypeChoice.child:
+            data["stockrecord"] = None
+            data["attribute_values"] = None
+        return data

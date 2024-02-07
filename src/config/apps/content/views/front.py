@@ -62,15 +62,19 @@ class GetHomeDataView(APIView):
                     Product.objects.only(
                         "title_ir",
                         "title_en",
-                        "slug",
-                        "upc",
                         "brand__title_en",
                         "brand__title_ir",
                         "brand__slug",
                     )
                     .select_related("brand", "stockrecord")
-                    .filter(brand_id__in=brand_ids, is_public=True,
-                            structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.parent])
+                    .filter(
+                        brand_id__in=brand_ids,
+                        is_public=True,
+                        structure__in=[
+                            Product.ProductTypeChoice.standalone,
+                            Product.ProductTypeChoice.parent,
+                        ],
+                    )
                     .annotate(primary_image_file=Subquery(primary_image_subquery))
                     .annotate(
                         row_number=Window(

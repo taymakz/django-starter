@@ -14,7 +14,9 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductImage,
     OptionGroupValue,
-    OptionGroup, ProductProperty, ProductPropertyValue,
+    OptionGroup,
+    ProductProperty,
+    ProductPropertyValue,
 )
 from config.apps.inventory.models import StockRecord
 
@@ -163,7 +165,7 @@ class ProductAdmin(admin.ModelAdmin):
         ProductImageInline,
         ProductRecommendationInline,
         ProductStockRecordInline,
-        ProductChildInline
+        ProductChildInline,
     ]
     raw_id_fields = ["parent"]
     prepopulated_fields = {"slug": ("title_en",)}
