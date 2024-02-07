@@ -80,7 +80,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
             "title_ir",
             "title_en",
             "slug",
-            "upc",
+            "short_slug",
             "url",
             "stockrecord",
             "brand",

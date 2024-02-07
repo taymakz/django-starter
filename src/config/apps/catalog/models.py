@@ -1,3 +1,6 @@
+import random
+import string
+
 from django.core.cache import cache
 from django.db import models
 from treenode.models import TreeNodeModel
@@ -265,7 +268,7 @@ class Product(BaseModel):
     title_ir = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     title_en = models.CharField(max_length=255, db_index=True, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
-    
+    short_slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True, editable=False)
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
     is_public = models.BooleanField(default=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
@@ -299,6 +302,13 @@ class Product(BaseModel):
         return f"{self.title_ir}"
 
     def save(self, *args, **kwargs):
+        if not self.short_slug and self.structure != self.ProductTypeChoice.child:
+            # Generate a unique random 5-digit number
+            while True:
+                random_short_slug = ''.join(random.choices(string.digits, k=5))
+                if not Product.objects.filter(short_slug=random_short_slug).exists():
+                    self.short_slug = random_short_slug
+                    break
         super().save(*args, **kwargs)
         cache.delete("cached_brand_products")
 
