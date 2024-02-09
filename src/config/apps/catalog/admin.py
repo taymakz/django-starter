@@ -169,6 +169,18 @@ class ProductAdmin(admin.ModelAdmin):
     ]
     raw_id_fields = ["parent"]
     prepopulated_fields = {"slug": ("title_en",)}
-    list_display = ["upc", "title_en", "title_ir", "slug", "order"]
+    list_display = [
+        "product_title",
+        "short_slug",
+        "title_en",
+        "title_ir",
+        "slug",
+        "order",
+    ]
     list_editable = ["title_ir", "title_en", "slug", "order"]
     search_fields = ("upc", "title_en", "slug")
+
+    def product_title(self, obj: Product):
+        if obj.structure == obj.ProductTypeChoice.child:
+            return f"child: {obj.parent.title_en}"
+        return f"P-S: {obj.title_en}"

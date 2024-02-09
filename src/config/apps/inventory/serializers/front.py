@@ -44,6 +44,7 @@ class StockRecordSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockRecord
         fields = (
+            "id",
             "sku",
             "sale_price",
             "special_sale_price",

@@ -9,6 +9,8 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductAttribute,
     ProductImage,
+    ProductProperty,
+    ProductPropertyValue,
 )
 from config.apps.inventory.serializers.front import (
     StockRecordCardSerializer,
@@ -162,6 +164,7 @@ class ProductAttributeValueSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductAttributeValue
         fields = (
+            "id",
             "attribute",
             "value_text",
             "value_integer",
@@ -192,6 +195,23 @@ class ProductCategorySerializer(serializers.ModelSerializer):
         )
 
 
+class ProductPropertySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductProperty
+        fields = (
+            "id",
+            "name",
+        )
+
+
+class ProductPropertyValueSerializer(serializers.ModelSerializer):
+    property = ProductPropertySerializer()
+
+    class Meta:
+        model = ProductPropertyValue
+        fields = ("id", "property", "value")
+
+
 class ProductDetailChildrenSerializer(serializers.ModelSerializer):
     stockrecord = StockRecordSerializer()
     images = ProductImageSerializer(many=True)
@@ -200,15 +220,55 @@ class ProductDetailChildrenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
+            "id",
             "stockrecord",
             "attribute_values",
             "images",
         )
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.structure == Product.ProductTypeChoice.child:
+            data["attribute_values"] = (
+                data["attribute_values"][0] if data["attribute_values"] else None
+            )
+        return data
+
 
 # product Detail
 class ProductDetailSerializer(serializers.ModelSerializer):
-    # children = ProductDetailChildrenSerializer(many=True)
+    attribute_values = ProductAttributeValueSerializer(many=True)
+    stockrecord = StockRecordSerializer()
+    images = ProductImageSerializer(many=True)
+    brand = BrandSerializer()
+    properties = ProductPropertyValueSerializer(many=True)
+
+    class Meta:
+        model = Product
+        fields = (
+            "structure",
+            "attribute_values",
+            "images",
+            "title_ir",
+            "title_en",
+            "short_slug",
+            "stockrecord",
+            "brand",
+            "meta_title",
+            "meta_description",
+            "properties",
+        )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.structure == Product.ProductTypeChoice.parent:
+            data["attribute_values"] = None
+        return data
+
+
+# this is only For Schema
+class ProductDetailSchemaSerializer(serializers.ModelSerializer):
+    children = ProductDetailChildrenSerializer(many=True)
     attribute_values = ProductAttributeValueSerializer(many=True)
     stockrecord = StockRecordSerializer()
     images = ProductImageSerializer(many=True)
@@ -218,7 +278,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             "structure",
-            # "children",
+            "children",
             "attribute_values",
             "images",
             "title_ir",
@@ -232,6 +292,5 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if instance.structure != Product.ProductTypeChoice.child:
-            data["stockrecord"] = None
             data["attribute_values"] = None
         return data

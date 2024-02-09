@@ -24,7 +24,16 @@ class StockRecord(models.Model):
 
     @property
     def has_special_price_with_date(self) -> bool:
-        return self.special_sale_price and self.special_sale_price_start_at
+        if self.special_sale_price:
+            if self.special_sale_price_end_at and not self.special_sale_price_start_at:
+                return True
+            elif (
+                self.special_sale_price_start_at and not self.special_sale_price_end_at
+            ):
+                return True
+            elif self.special_sale_price_start_at and self.special_sale_price_end_at:
+                return True
+        return False
 
     @property
     def is_special_price_dates_valid(self) -> bool:
@@ -60,18 +69,61 @@ class StockRecord(models.Model):
 
             parent_product = Product.objects.get(id=self.product.parent.id)
             childrens = parent_product.children.filter(is_public=True)
-            minimum_stock: StockRecord = childrens[0].stockrecord
 
-            for item in childrens:
-                if item.stockrecord.sale_price < minimum_stock.sale_price:
-                    minimum_stock = item.stockrecord
-            StockRecord.objects.update_or_create(
-                product=self.product.parent,
-                defaults={
-                    "sale_price": minimum_stock.sale_price,
-                    "special_sale_price": minimum_stock.special_sale_price,
-                    "special_sale_price_start_at": minimum_stock.special_sale_price_start_at,
-                    "special_sale_price_end_at": minimum_stock.special_sale_price_end_at,
-                    "num_stock": minimum_stock.num_stock,
-                },
-            )
+            if childrens.exists():
+                # Initialize with the first child product's special price start and end dates
+                min_start_date = None
+                max_end_date = None
+                minimum_stock = childrens[0].stockrecord
+
+                # Find the minimum special price start date and the maximum special price end date and Minimum Stock
+                for item in childrens:
+                    if item.stockrecord.sale_price < minimum_stock.sale_price:
+                        minimum_stock = item.stockrecord
+                    if (
+                        item.stockrecord.is_special_price_dates_valid
+                        and item.stockrecord.has_special_price_with_date
+                    ):
+                        if (
+                            item.stockrecord.special_sale_price_start_at
+                            and item.stockrecord.special_sale_price_end_at
+                        ):
+                            if (
+                                min_start_date is None
+                                or item.stockrecord.special_sale_price_start_at
+                                < min_start_date
+                            ):
+                                min_start_date = (
+                                    item.stockrecord.special_sale_price_start_at
+                                )
+                            if (
+                                max_end_date is None
+                                or item.stockrecord.special_sale_price_end_at
+                                > max_end_date
+                            ):
+                                max_end_date = (
+                                    item.stockrecord.special_sale_price_end_at
+                                )
+
+                StockRecord.objects.update_or_create(
+                    product=self.product.parent,
+                    defaults={
+                        "sale_price": minimum_stock.sale_price,
+                        "special_sale_price": minimum_stock.special_sale_price,
+                        "special_sale_price_start_at": min_start_date,
+                        "special_sale_price_end_at": max_end_date,
+                        "num_stock": minimum_stock.num_stock,
+                    },
+                )
+            else:
+                # If there are no child products, reset the values for the parent product to None
+                StockRecord.objects.update_or_create(
+                    product=self.product.parent,
+                    defaults={
+                        "sale_price": self.sale_price,
+                        "special_sale_price": None,
+                        "special_sale_price_start_at": None,
+                        "special_sale_price_end_at": None,
+                        "num_stock": self.num_stock,
+                    },
+                )

@@ -13,11 +13,14 @@ from config.apps.catalog.models import (
     ProductImage,
     OptionGroup,
     ProductAttributeValue,
+    ProductPropertyValue,
 )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
     SearchFilterOptionSerializer,
     ProductDetailSerializer,
+    ProductDetailSchemaSerializer,
+    ProductDetailChildrenSerializer,
 )
 
 
@@ -97,7 +100,7 @@ class SearchFilterOptionView(APIView):
 class ProductDetailView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
-    serializer_class = ProductDetailSerializer
+    serializer_class = ProductDetailSchemaSerializer
 
     def get(self, request, short_slug=None, *args, **kwargs):
         if not short_slug:
@@ -133,6 +136,12 @@ class ProductDetailView(APIView):
                 )
                 .prefetch_related("value_multi_option"),
             )
+            prefetch_properties = Prefetch(
+                "properties",
+                queryset=ProductPropertyValue.objects.all().select_related(
+                    "property",
+                ),
+            )
 
             if product.structure == Product.ProductTypeChoice.parent:
                 products = (
@@ -150,7 +159,9 @@ class ProductDetailView(APIView):
                         )
                     )
                     .select_related("stockrecord", "brand", "brand__image")
-                    .prefetch_related(prefetch_images, prefetch_attributes)
+                    .prefetch_related(
+                        prefetch_images, prefetch_attributes, prefetch_properties
+                    )
                 )
 
                 parent_product = next(
@@ -173,7 +184,7 @@ class ProductDetailView(APIView):
                     else None
                 )
                 if parent_data:
-                    parent_data["children"] = ProductDetailSerializer(
+                    parent_data["children"] = ProductDetailChildrenSerializer(
                         children_products, many=True
                     ).data
 
@@ -183,17 +194,17 @@ class ProductDetailView(APIView):
                     message=ResponseMessage.SUCCESS.value,
                 )
 
-            product = Product.objects.get(
-                short_slug=short_slug, structure=Product.ProductTypeChoice.standalone
-            )
-            product = product.select_related(
-                "stockrecord", "brand", "brand__image"
-            ).prefetch_related(
-                Prefetch(
-                    "images",
-                    queryset=ProductImage.objects.all().select_related("image"),
-                ),
-                Prefetch(prefetch_images, prefetch_attributes),
+            product = (
+                Product.objects.select_related("stockrecord", "brand", "brand__image")
+                .prefetch_related(
+                    prefetch_images,
+                    prefetch_attributes,
+                    prefetch_properties,
+                )
+                .get(
+                    short_slug=short_slug,
+                    structure=Product.ProductTypeChoice.standalone,
+                )
             )
 
             data = ProductDetailSerializer(product).data
