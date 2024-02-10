@@ -4,23 +4,22 @@ from random import randint
 from django.db import models
 from django.utils import timezone
 
-from .enums import VerificationMessageUsageOptions, VerificationMessageTypeOptions
-
-VERIFICATION_MESSAGE_USAGE_CHOICES = [
-    (data.name, data.value) for data in VerificationMessageUsageOptions
-]
-
-VERIFICATION_MESSAGE_TYPE_CHOICES = [
-    (data.name, data.value) for data in VerificationMessageTypeOptions
-]
-
 
 class VerifyOTPService(models.Model):
-    type = models.CharField(max_length=5, choices=VERIFICATION_MESSAGE_TYPE_CHOICES)
+    class VerifyOTPServiceUsageChoice(models.TextChoices):
+        AUTHENTICATE = "احراز هویت"
+        RESET_PASSWORD = "بازیابی کلمه عبور"
+        VERIFY = "تایید"
+
+    class VerifyOTPServiceTypeChoice(models.TextChoices):
+        PHONE = "شماره موبایل"
+        EMAIL = "ایمیل"
+
+    type = models.CharField(max_length=12, choices=VerifyOTPServiceTypeChoice)
     usage = models.CharField(
-        max_length=14,
-        choices=VERIFICATION_MESSAGE_USAGE_CHOICES,
-        default=VerificationMessageUsageOptions.AUTHENTICATE.name,
+        max_length=17,
+        choices=VerifyOTPServiceUsageChoice,
+        default=VerifyOTPServiceUsageChoice.AUTHENTICATE,
     )
     to = models.CharField(max_length=355)
     code = models.CharField(max_length=5)

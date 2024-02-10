@@ -11,8 +11,6 @@ from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
 from config.apps.messages.verification.models import (
     VerifyOTPService,
-    VerificationMessageUsageOptions,
-    VerificationMessageTypeOptions,
 )
 from config.apps.user.account.enums import UserAuthenticationCheckSectionEnum
 from config.apps.user.account.models import User, UserPasswordResetToken
@@ -123,9 +121,9 @@ class UserAuthenticationCheckView(APIView):
             # Check for the latest OTP service record for phone authentication
             otp_service = (
                 VerifyOTPService.objects.filter(
-                    type=VerificationMessageTypeOptions.PHONE.name,
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
                     to=username,
-                    usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                    usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                 )
                 .order_by("-id")
                 .first()
@@ -144,9 +142,9 @@ class UserAuthenticationCheckView(APIView):
                 # If no OTP service record exists or it is expired, create a new one and send OTP
                 if not otp_service:
                     new_otp_service = VerifyOTPService.objects.create(
-                        type=VerificationMessageTypeOptions.PHONE.name,
+                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
                         to=username,
-                        usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                        usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                     )
 
                     new_otp_service.send_otp()
@@ -177,9 +175,9 @@ class UserAuthenticationCheckView(APIView):
             # Check for the latest OTP service record for email authentication
             otp_service = (
                 VerifyOTPService.objects.filter(
-                    type=VerificationMessageTypeOptions.EMAIL.name,
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
                     to=username,
-                    usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                    usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                 )
                 .order_by("-id")
                 .first()
@@ -196,9 +194,9 @@ class UserAuthenticationCheckView(APIView):
                 # If no OTP service record exists or it is expired, create a new one and send OTP
                 if not otp_service:
                     new_otp_service = VerifyOTPService.objects.create(
-                        type=VerificationMessageTypeOptions.EMAIL.name,
+                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
                         to=username,
-                        usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                        usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                     )
                     new_otp_service.send_otp()
 
@@ -210,11 +208,6 @@ class UserAuthenticationCheckView(APIView):
                     ),
                     status=status.HTTP_200_OK,
                 )
-            # If OTP service record exists and is expired, delete it
-            # TODO : Commented Because Celery will Handle this section
-
-            # if otp_service and otp_service.is_expired():
-            #     otp_service.delete()
 
             return BaseResponse(
                 data={"section": UserAuthenticationCheckSectionEnum.PASSWORD.name},
@@ -328,7 +321,7 @@ class UserOTPAuthenticationView(APIView):
                     type=username_type,
                     to=username,
                     code=otp,
-                    usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                    usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                 )
                 .order_by("-id")
                 .first()
@@ -356,7 +349,7 @@ class UserOTPAuthenticationView(APIView):
                     type=username_type,
                     to=username,
                     code=otp,
-                    usage=VerificationMessageUsageOptions.AUTHENTICATE.name,
+                    usage=VerifyOTPService.VerifyOTPServiceUsageChoice.AUTHENTICATE,
                 )
                 .order_by("-id")
                 .first()
@@ -413,9 +406,9 @@ class UserForgotPasswordCheckView(APIView):
 
         # Determine OTP type, response message, and format the username
         otp_type = (
-            VerificationMessageTypeOptions.PHONE.name
+            VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE
             if User.is_phone(username)
-            else VerificationMessageTypeOptions.EMAIL.name
+            else VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL
         )
         message = (
             ResponseMessage.PHONE_OTP_SENT.value
@@ -440,7 +433,7 @@ class UserForgotPasswordCheckView(APIView):
         otp_service, _ = VerifyOTPService.objects.get_or_create(
             type=otp_type,
             to=username,
-            usage=VerificationMessageUsageOptions.RESET_PASSWORD.name,
+            usage=VerifyOTPService.VerifyOTPServiceUsageChoice.RESET_PASSWORD,
         )
 
         if otp_service.is_expired():
@@ -453,7 +446,7 @@ class UserForgotPasswordCheckView(APIView):
             otp_service = VerifyOTPService.objects.create(
                 type=otp_type,
                 to=username,
-                usage=VerificationMessageUsageOptions.RESET_PASSWORD.name,
+                usage=VerifyOTPService.VerifyOTPServiceUsageChoice.RESET_PASSWORD,
             )
             otp_service.send_otp()
 
@@ -498,7 +491,7 @@ class UserForgotPasswordOTPView(APIView):
                     type=username_type,
                     to=username,
                     code=otp,
-                    usage=VerificationMessageUsageOptions.RESET_PASSWORD.name,
+                    usage=VerifyOTPService.VerifyOTPServiceUsageChoice.RESET_PASSWORD,
                 )
                 .order_by("-id")
                 .first()

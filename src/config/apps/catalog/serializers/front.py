@@ -156,7 +156,6 @@ class ProductOptionGroupValueSerializer(serializers.ModelSerializer):
 
 
 class ProductAttributeValueSerializer(serializers.ModelSerializer):
-    # value = serializers.SerializerMethodField()
     attribute = ProductAttributeSerializer()
     value_option = ProductOptionGroupValueSerializer()
     value_multi_option = ProductOptionGroupValueSerializer(many=True)
@@ -172,9 +171,6 @@ class ProductAttributeValueSerializer(serializers.ModelSerializer):
             "value_option",
             "value_multi_option",
         )
-
-    # def get_value(self, obj: ProductAttributeValue):
-    #     return obj.get_value
 
 
 class ProductImageSerializer(serializers.ModelSerializer):

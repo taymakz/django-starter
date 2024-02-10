@@ -1,6 +1,5 @@
 import uuid
 from datetime import timedelta
-from enum import Enum
 
 from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
 from django.contrib.auth.models import PermissionsMixin, AbstractUser
@@ -14,7 +13,6 @@ from rest_framework_simplejwt.token_blacklist.models import (
 )
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from config.apps.user.account.enums import UsernameTypesEnum
 from config.libs.db.models import BaseModel
 from config.libs.validator.validators import validate_phone, validate_email
 
@@ -53,6 +51,10 @@ class UserManager(BaseUserManager):
 
 # Create your models here.
 class User(BaseModel, AbstractUser):
+    class UsernameTypeChoice(models.TextChoices):
+        PHONE = "شماره موبایل"
+        EMAIL = "ایمیل"
+
     username = models.CharField(max_length=255, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True, blank=True, null=True)
     phone = models.CharField(unique=True, max_length=11, blank=True, null=True)
@@ -96,7 +98,7 @@ class User(BaseModel, AbstractUser):
             if self.pk:
                 UserPreviousDetailHistory.objects.create(
                     user=self,
-                    field=UserInfoHistoryFields.USERNAME.name,
+                    field=UserPreviousDetailHistory.UserPreviousDetailHistoryFieldChoice.USERNAME,
                     old_value=self.__previous_username,
                     new_value=self.username,
                 )  # Use updated self.username here
@@ -105,7 +107,7 @@ class User(BaseModel, AbstractUser):
                 if self.email != self.__previous_email:
                     UserPreviousDetailHistory.objects.create(
                         user=self,
-                        field=UserInfoHistoryFields.EMAIL.name,
+                        field=UserPreviousDetailHistory.UserPreviousDetailHistoryFieldChoice.EMAIL,
                         old_value=self.__previous_email,
                         new_value=self.email,
                     )
@@ -114,7 +116,7 @@ class User(BaseModel, AbstractUser):
                 if self.phone != self.__previous_phone:
                     UserPreviousDetailHistory.objects.create(
                         user=self,
-                        field=UserInfoHistoryFields.PHONE.name,
+                        field=UserPreviousDetailHistory.UserPreviousDetailHistoryFieldChoice.PHONE,
                         old_value=self.__previous_phone,
                         new_value=self.phone,
                     )
@@ -145,7 +147,7 @@ class User(BaseModel, AbstractUser):
         if User.is_phone(value):
             return (
                 f"0{value}"
-                if len(value) == 10 == UsernameTypesEnum.PHONE.name
+                if len(value) == 10 == User.UsernameTypeChoice.PHONE
                 else value
             )
         else:
@@ -158,9 +160,9 @@ class User(BaseModel, AbstractUser):
     @staticmethod
     def get_username_type(username: str) -> str:
         if validate_phone(username):
-            return UsernameTypesEnum.PHONE.name
+            return User.UsernameTypeChoice.PHONE
         elif validate_email(username):
-            return UsernameTypesEnum.EMAIL.name
+            return User.UsernameTypeChoice.EMAIL
         else:
             raise ValueError("Invalid username type. Must be either phone or email.")
 
@@ -180,20 +182,18 @@ class RecycleUser(User):
         proxy = True
 
 
-class UserInfoHistoryFields(Enum):
-    USERNAME = "نام کاربری"
-    PHONE = "شماره موبایل"
-    EMAIL = "ایمیل"
-
-
-USER_HISTORY_FIELD_CHOICES = [(data.name, data.value) for data in UserInfoHistoryFields]
-
-
 class UserPreviousDetailHistory(BaseModel):
+    class UserPreviousDetailHistoryFieldChoice(models.TextChoices):
+        USERNAME = "نام کاربری"
+        PHONE = "شماره موبایل"
+        EMAIL = "ایمیل"
+
     user = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name="previous_detail_histories"
     )
-    field = models.CharField(choices=USER_HISTORY_FIELD_CHOICES, max_length=8)
+    field = models.CharField(
+        choices=UserPreviousDetailHistoryFieldChoice, max_length=12
+    )
     old_value = models.CharField(max_length=255)
     new_value = models.CharField(max_length=255)
 

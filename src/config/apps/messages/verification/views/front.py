@@ -4,7 +4,6 @@ from rest_framework.views import APIView
 
 from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
-from config.apps.messages.verification.enums import VerificationMessageTypeOptions
 from config.apps.messages.verification.models import VerifyOTPService
 from config.apps.messages.verification.serializers.front import (
     VerificationRequestOTPSerializer,
@@ -32,9 +31,9 @@ class VerificationRequestOTPView(APIView):
         to = User.get_formatted_username(to)
 
         if validate_phone(to):
-            contact_type = VerificationMessageTypeOptions.PHONE.name
+            contact_type = VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE
         elif validate_email(to):
-            contact_type = VerificationMessageTypeOptions.EMAIL.name
+            contact_type = VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL
         else:
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
@@ -54,7 +53,7 @@ class VerificationRequestOTPView(APIView):
             else:
                 return BaseResponse(
                     status=status.HTTP_200_OK,
-                    message=f"{ResponseMessage.PHONE_OTP_SENT.value.format(username=to) if VerificationMessageTypeOptions.PHONE.name else ResponseMessage.EMAIL_OTP_SENT.value.format(username=to)}",
+                    message=f"{ResponseMessage.PHONE_OTP_SENT.value.format(username=to) if VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE else ResponseMessage.EMAIL_OTP_SENT.value.format(username=to)}",
                 )
 
         new_otp_service = VerifyOTPService.objects.create(

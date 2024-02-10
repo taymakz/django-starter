@@ -55,6 +55,7 @@ INTERNAL_APPS = [
     "config.apps.messages.verification",
     "config.apps.catalog",
     "config.apps.inventory",
+    "config.apps.order",
 ]
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
 

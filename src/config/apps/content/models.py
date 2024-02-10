@@ -18,7 +18,7 @@ class Banner(BaseModel):
     )
     position = models.CharField(choices=BANNER_POSITION_CHOICES, max_length=40)
     title = models.CharField(max_length=155)
-    order = models.PositiveSmallIntegerField(default=1, blank=True, null=True)
+    order = models.PositiveSmallIntegerField(default=0, blank=True, null=True)
     description = models.CharField(max_length=155, null=True, blank=True)
 
     url = models.URLField(blank=True, null=True)
