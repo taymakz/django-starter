@@ -65,8 +65,9 @@ class GetHomeDataView(APIView):
                         "brand__title_en",
                         "brand__title_ir",
                         "brand__slug",
+                        "product_class__track_stock",
                     )
-                    .select_related("brand", "stockrecord")
+                    .select_related("brand", "stockrecord", "product_class")
                     .filter(
                         brand_id__in=brand_ids,
                         is_public=True,

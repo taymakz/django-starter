@@ -158,7 +158,9 @@ class ProductDetailView(APIView):
                             structure=Product.ProductTypeChoice.child,
                         )
                     )
-                    .select_related("stockrecord", "brand", "brand__image")
+                    .select_related(
+                        "stockrecord", "brand", "brand__image", "product_class"
+                    )
                     .prefetch_related(
                         prefetch_images, prefetch_attributes, prefetch_properties
                     )
@@ -195,7 +197,9 @@ class ProductDetailView(APIView):
                 )
 
             product = (
-                Product.objects.select_related("stockrecord", "brand", "brand__image")
+                Product.objects.select_related(
+                    "stockrecord", "brand", "brand__image", "product_class"
+                )
                 .prefetch_related(
                     prefetch_images,
                     prefetch_attributes,

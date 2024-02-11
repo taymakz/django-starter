@@ -52,6 +52,7 @@ INTERNAL_APPS = [
     "config.apps.media",
     "config.apps.content",
     "config.apps.user.account",
+    "config.apps.user.address",
     "config.apps.messages.verification",
     "config.apps.catalog",
     "config.apps.inventory",

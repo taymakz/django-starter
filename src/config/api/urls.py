@@ -52,6 +52,13 @@ front_urls = [
             namespace="content_front",
         ),
     ),
+    path(
+        "order/",
+        include(
+            ("config.apps.order.urls.front", "config.apps.order"),
+            namespace="order_front",
+        ),
+    ),
 ]
 
 urlpatterns = [] + admin_urls + front_urls

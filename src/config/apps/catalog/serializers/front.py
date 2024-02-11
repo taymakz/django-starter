@@ -85,6 +85,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
     url = serializers.CharField(source="get_absolute_url")
     stockrecord = StockRecordCardSerializer()
     image = serializers.SerializerMethodField()
+    track_stock = serializers.SerializerMethodField()
     brand = ProductCardBrandSerializer()
 
     class Meta:
@@ -95,11 +96,15 @@ class ProductCardSerializer(serializers.ModelSerializer):
             "title_en",
             "url",
             "stockrecord",
+            "track_stock",
             "brand",
         )
 
     def get_image(self, obj):
         return obj.primary_image_file
+
+    def get_track_stock(self, obj: Product):
+        return obj.product_class.track_stock
 
 
 class OptionGroupValueSerializer(serializers.ModelSerializer):
@@ -238,6 +243,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
     properties = ProductPropertyValueSerializer(many=True)
+    track_stock = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -249,6 +255,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "title_en",
             "short_slug",
             "stockrecord",
+            "track_stock",
             "brand",
             "meta_title",
             "meta_description",
@@ -260,6 +267,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         if instance.structure == Product.ProductTypeChoice.parent:
             data["attribute_values"] = None
         return data
+
+    def get_track_stock(self, obj: Product):
+        return obj.product_class.track_stock
 
 
 # this is only For Schema

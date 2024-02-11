@@ -25,7 +25,7 @@ class Order(BaseModel):
         PAID = "پرداخت شده"
 
     user = models.ForeignKey(
-        'account.User',
+        "account.User",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -83,12 +83,19 @@ class Order(BaseModel):
 
     final_paid_price = models.PositiveBigIntegerField(default=0)  # مبلغ پرداختی نهایی
     final_profit_price = models.PositiveBigIntegerField(default=0)  # سود نهایی
-    final_total_items_final_price = models.PositiveBigIntegerField(default=0)  # قیمت نهایی محصولات سبد خرید
+    final_total_items_final_price = models.PositiveBigIntegerField(
+        default=0
+    )  # قیمت نهایی محصولات سبد خرید
     final_total_items_before_discount_price = models.PositiveBigIntegerField(
-        default=0)  # قیمت قبل تخفیف محصولات سبد خرید
+        default=0
+    )  # قیمت قبل تخفیف محصولات سبد خرید
 
-    final_coupon_effect_price = models.PositiveBigIntegerField(default=0)  # تاثیر کد تخفیف بعد خرید
-    final_shipping_effect_price = models.PositiveBigIntegerField(default=0)  # هزینه ارسال بعد خرید
+    final_coupon_effect_price = models.PositiveBigIntegerField(
+        default=0
+    )  # تاثیر کد تخفیف بعد خرید
+    final_shipping_effect_price = models.PositiveBigIntegerField(
+        default=0
+    )  # هزینه ارسال بعد خرید
 
     class Meta:
         db_table = "order"
@@ -104,7 +111,7 @@ class Order(BaseModel):
         return f"/panel/orders/{self.slug}"
 
     def set_repayment_expire_date(self):
-        self.repayment_date_expire = now() + timedelta(hours=1)
+        self.repayment_expire_at = now() + timedelta(hours=1)
         self.save()
 
     def is_paid(self):
@@ -113,22 +120,25 @@ class Order(BaseModel):
     @staticmethod
     def generate_unique_slug():
         import random
+
         while True:
             slug = str(random.randint(10000, 99999))
             if not Order.objects.filter(slug=slug).exists():
                 return slug
 
     @staticmethod
-    def is_valid_shipping_method(user_address: UserAddresses, shipping: 'ShippingRate'):
-
+    def is_valid_shipping_method(user_address: UserAddresses, shipping: "ShippingRate"):
         # Get the ShippingPrice object with the given ID
         if not user_address or not shipping:
-            return False, 'آدرس و یا شیوه ارسال نا معتبر'
+            return False, "آدرس و یا شیوه ارسال نا معتبر"
         if shipping.all_area:
             # Filter all ShippingPrice objects that are active and not equal to 'همه'
-            other_shipping_areas = ShippingRate.objects.filter(all_area=True, is_active=True)
-            if user_address and user_address.receiver_province in [shipping_area.area for shipping_area in
-                                                                   other_shipping_areas]:
+            other_shipping_areas = ShippingRate.objects.filter(
+                all_area=True, is_active=True
+            )
+            if user_address and user_address.receiver_province in [
+                shipping_area.area for shipping_area in other_shipping_areas
+            ]:
                 # User's main address province matches an active shipping area
                 message = ResponseMessage.PAYMENT_NOT_VALID_SELECTED_SHIPPING.value
                 return False, message
@@ -146,26 +156,36 @@ class Order(BaseModel):
         return sum(item.get_total_price() for item in self.items.all())
 
     def get_payment_price(self):
-        return self.get_total_price() + self.shipping_rate.calculate_price(order_price=self.get_total_price())
+        return self.get_total_price() + self.shipping_rate.calculate_price(
+            order_price=self.get_total_price()
+        )
 
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey('catalog.Product', on_delete=models.CASCADE, related_name="in_baskets")
+    product = models.ForeignKey(
+        "catalog.Product", on_delete=models.CASCADE, related_name="in_baskets"
+    )
     count = models.PositiveSmallIntegerField(default=0)
 
     # Fields that Fill After Payment
     final_price = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
-    final_price_before_discount = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
-    final_discount = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
+    final_price_before_discount = models.PositiveBigIntegerField(
+        null=True, blank=True, editable=False
+    )
+    final_discount = models.PositiveBigIntegerField(
+        null=True, blank=True, editable=False
+    )
     final_profit = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
 
     class Meta:
         db_table = "order_item"
 
     def __str__(self):
-        return f"{self.order.user.email} - {self.order.user.phone} " \
-               f"- {self.product.title_ir}"
+        return (
+            f"{self.order.user.email} - {self.order.user.phone} "
+            f"- {self.product.title_ir}"
+        )
 
     def get_total_price(self):
         return self.product.stockrecord.final_price * self.count
@@ -175,7 +195,10 @@ class OrderItem(models.Model):
 
     def get_total_profit(self):
         if self.product.stockrecord.special_sale_price:
-            return self.product.stockrecord.sale_price - self.product.stockrecord.special_sale_price
+            return (
+                self.product.stockrecord.sale_price
+                - self.product.stockrecord.special_sale_price
+            )
         return 0
 
     def get_total_diff_price(self):
@@ -248,7 +271,7 @@ class Coupon(BaseModel):
     only_categories = models.ManyToManyField("catalog.Category")
     only_products = models.ManyToManyField("catalog.Product")
     only_brands = models.ManyToManyField("catalog.Brand")
-    only_users = models.ManyToManyField('account.User')
+    only_users = models.ManyToManyField("account.User")
 
     start_at = models.DateTimeField(blank=True, null=True)
     expire_at = models.DateTimeField(blank=True, null=True)
@@ -275,17 +298,17 @@ class Coupon(BaseModel):
     def clean(self):
         super().clean()
         if (
-                self.min_order_total is not None
-                and self.max_order_total is not None
-                and self.min_order_total > self.max_order_total
+            self.min_order_total is not None
+            and self.max_order_total is not None
+            and self.min_order_total > self.max_order_total
         ):
             raise ValidationError(
                 "Minimum order total cannot be greater than maximum order total."
             )
         if (
-                self.expire_at is not None
-                and self.start_at is not None
-                and self.expire_at <= self.start_at
+            self.expire_at is not None
+            and self.start_at is not None
+            and self.expire_at <= self.start_at
         ):
             raise ValidationError("expire date must be after start date.")
 
@@ -300,8 +323,8 @@ class Coupon(BaseModel):
             user = User.objects.filter(id=user_id).first()
             coupon_usage = CouponUsage.objects.filter(coupon=self, user=user).first()
             if (
-                    coupon_usage is not None
-                    and coupon_usage.usage_count >= self.max_usage_per_user
+                coupon_usage is not None
+                and coupon_usage.usage_count >= self.max_usage_per_user
             ):
                 return (
                     False,
@@ -310,16 +333,16 @@ class Coupon(BaseModel):
         if self.expire_at is not None and self.expire_at <= now():
             return False, "کد تخفیف معتبر نمیباشد"
         if (
-                self.min_order_total is not None
-                and order_total_price < self.min_order_total
+            self.min_order_total is not None
+            and order_total_price < self.min_order_total
         ):
             return (
                 False,
                 f"کد تخفیف وارد شده قابل استفاده برای سفارش های بیشتر از {self.min_order_total:,} می باشد",
             )
         if (
-                self.max_order_total is not None
-                and order_total_price > self.max_order_total
+            self.max_order_total is not None
+            and order_total_price > self.max_order_total
         ):
             return (
                 False,
@@ -334,7 +357,7 @@ class Coupon(BaseModel):
 
         if self.only_first_order:
             if Order.objects.filter(
-                    user_id=user_id, payment_status=Order.PaymentStatusChoice.PAID
+                user_id=user_id, payment_status=Order.PaymentStatusChoice.PAID
             ).exists():
                 return False, "کد تخفیف فقط برای اولین خرید قابل استفاده است"
 
@@ -350,7 +373,7 @@ class CouponUsage(models.Model):
         related_name="coupon_usages",
     )
     user = models.ForeignKey(
-        'account.User',
+        "account.User",
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -400,8 +423,8 @@ class ShippingRate(BaseModel):
         db_table = "shipping_rate"
         ordering = ("order",)
         unique_together = [
-            ("shipping_service", "area", "is_active"),
-            ("shipping_service", "all_area", "is_active"),
+            ("service", "area", "is_public"),
+            ("service", "all_area", "is_public"),
         ]
 
     def __str__(self):
@@ -414,9 +437,9 @@ class ShippingRate(BaseModel):
         return (
             0
             if self.pay_at_destination
-               or (
-                       self.free_shipping_threshold
-                       and order_price > self.free_shipping_threshold
-               )
+            or (
+                self.free_shipping_threshold
+                and order_price > self.free_shipping_threshold
+            )
             else self.price
         )
