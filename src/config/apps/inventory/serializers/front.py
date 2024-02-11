@@ -52,7 +52,7 @@ class StockRecordSerializer(serializers.ModelSerializer):
             "special_sale_price_start_at",
             "special_sale_price_end_at",
             "num_stock",
-            "num_limit",
+            "in_order_limit",
         )
 
     def get_special_sale_price(self, obj: StockRecord):
