@@ -49,11 +49,11 @@ class OrderItemsValidateLocalView(APIView):
                 is_public=True,
                 structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.child]
 
-            )
+            ).values('id')
         )
-
+        valid_id_list = [item['id'] for item in valid_ids]
         return BaseResponse(
-            data=list(valid_ids),
+            data=valid_id_list,
             status=status.HTTP_204_NO_CONTENT,
             message=ResponseMessage.SUCCESS.value,
         )
@@ -178,9 +178,15 @@ class OrderAddItemView(APIView):
     def post(self, request):
         try:
             items_to_add = request.data.get("items_to_add", [])
+            order_id = request.data.get("order_id", None)
+            # Assuming that User Logged in and Local Order to Remote Order
+            if not order_id:
+                order, _ = Order.objects.only('id').get_or_create(
+                    user=request.user,
+                    payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
+                order_id = order.id
 
-            order_id = request.data.get("order_id")
-            if not items_to_add or not order_id:
+            if not items_to_add:
                 return BaseResponse(
                     status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
                 )
@@ -221,7 +227,6 @@ class OrderAddItemView(APIView):
             for item in items_to_add:
                 product_id = item['product_id']
                 count = item['count']
-
                 if product_id not in product_map:
                     continue  # Skip if product not valid
 
