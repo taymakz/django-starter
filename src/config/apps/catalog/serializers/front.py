@@ -244,13 +244,16 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     brand = BrandSerializer()
     properties = ProductPropertyValueSerializer(many=True)
     track_stock = serializers.SerializerMethodField()
+    url = serializers.CharField(source="get_absolute_url")
 
     class Meta:
         model = Product
         fields = (
+            "id",
             "structure",
             "attribute_values",
             "images",
+            "url",
             "title_ir",
             "title_en",
             "short_slug",
@@ -279,14 +282,17 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
     stockrecord = StockRecordSerializer()
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
+    url = serializers.CharField(source="get_absolute_url")
 
     class Meta:
         model = Product
         fields = (
+            "id",
             "structure",
             "children",
             "attribute_values",
             "images",
+            "url",
             "title_ir",
             "title_en",
             "stockrecord",
