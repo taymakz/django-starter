@@ -19,6 +19,8 @@ class UserAddresses(BaseModel):
     receiver_province = models.CharField(max_length=100, choices=province.province)
     receiver_city = models.CharField(max_length=100, choices=cities.cities)
     receiver_postal_code = models.CharField(max_length=10)
+    receiver_building_number = models.CharField(max_length=10)
+    receiver_unit = models.CharField(max_length=10)
     receiver_address = models.TextField(max_length=100)
 
     class Meta:

@@ -13,8 +13,8 @@ class UserAddressesAdmin(admin.ModelAdmin):
     )
 
     @staticmethod
-    def receiver_fullname(obj):
-        return obj.user.get_full_name()
+    def receiver_fullname(obj: UserAddresses):
+        return f"{obj.receiver_name} {obj.receiver_family}"
 
     @staticmethod
     def destination(obj):

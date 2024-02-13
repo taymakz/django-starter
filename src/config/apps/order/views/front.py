@@ -393,3 +393,26 @@ class OrderItemRemoveView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+class OrderItemClearView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        try:
+            order_id = request.data.get("order_id")
+            OrderItem.objects.select_related('order').filter(
+                order__user=request.user,
+                order__id=order_id,
+                order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+            ).delete()
+            return BaseResponse(
+                status=status.HTTP_204_NO_CONTENT,
+                message=ResponseMessage.ORDER_ITEM_CLEARED.value,
+            )
+        except Exception as e:
+            print(f"apps.order.views.front line 413 : {e}")
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )

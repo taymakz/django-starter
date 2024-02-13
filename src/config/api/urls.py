@@ -29,6 +29,13 @@ front_urls = [
         ),
     ),
     path(
+        "address/",
+        include(
+            ("config.apps.user.address.urls.front", "config.apps.user.address"),
+            namespace="address_front",
+        ),
+    ),
+    path(
         "messages/verification/",
         include(
             (
