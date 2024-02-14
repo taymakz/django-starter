@@ -1,5 +1,4 @@
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -38,12 +37,12 @@ class UserAddressAPIView(APIView):
             message=serializer.errors,
         )
 
-    def put(self, request, pk):
+    def put(self, request):
         try:
-            address = UserAddresses.objects.get(id=pk, user=request.user)
-            serializer = UserAddressesSerializer(address, data=request.data)
+            serializer = UserAddressesSerializer(data=request.data)
             if serializer.is_valid():
-                serializer.save()
+                address = UserAddresses.objects.get(id=request.data.get('id'), user=request.user)
+                serializer.update(address, serializer.validated_data)
                 return BaseResponse(
                     status=status.HTTP_204_NO_CONTENT,
                     message=ResponseMessage.USER_PANEL_ADDRESS_EDITED_SUCCESSFULLY.value
@@ -55,9 +54,10 @@ class UserAddressAPIView(APIView):
                 message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
             )
 
-    def delete(self, request, pk):
+    def delete(self, request):
         try:
-            address = UserAddresses.objects.get(id=pk, user=request.user)
+            address_id = self.request.data.get("id", None)
+            address = UserAddresses.objects.get(id=address_id, user=request.user)
             address.delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -67,30 +67,3 @@ class UserAddressAPIView(APIView):
             return BaseResponse(status=status.HTTP_404_NOT_FOUND,
                                 message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
                                 )
-
-
-class UserAddressDetailAPIView(RetrieveAPIView):
-    queryset = UserAddresses.objects.all()
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    lookup_field = 'id'
-    serializer_class = UserAddressesSerializer
-
-    def get(self, request, *args, **kwargs):
-        try:
-            address = self.get_object()
-            if address.user != request.user:
-                response = BaseResponse(
-                    status=status.HTTP_403_FORBIDDEN,
-                    message=ResponseMessage.ACCESS_DENIED.value,
-                )
-                return response
-            serializer = self.get_serializer(address)
-            return BaseResponse(
-                data=serializer.data,
-                status=status.HTTP_200_OK,
-                message=ResponseMessage.SUCCESS.value,
-            )
-        except UserAddresses.DoesNotExist:
-            return BaseResponse({"message": ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value},
-                                status=status.HTTP_404_NOT_FOUND)

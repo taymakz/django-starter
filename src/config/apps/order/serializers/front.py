@@ -3,8 +3,31 @@ from rest_framework import serializers
 from config.apps.catalog.models import Product
 from config.apps.catalog.serializers.front import ProductAttributeValueSerializer
 from config.apps.inventory.serializers.front import StockRecordSerializer
-from config.apps.order.models import OrderItem, Order
+from config.apps.order.models import OrderItem, Order, ShippingRate, ShippingService
 from config.libs.persian.date import model_date_field_convertor
+
+
+class ShippingServiceSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ShippingService
+        fields = ('id', 'name', 'image', 'url')
+
+    def get_image(self, obj: ShippingService):
+        if obj.image:
+            return obj.image.file.name
+        return None
+
+
+class ShippingRateSerializer(serializers.ModelSerializer):
+    service = ShippingServiceSerializer()
+
+    class Meta:
+        model = ShippingRate
+        fields = (
+            'id', 'service', 'area', 'price', 'all_area', 'free_shipping_threshold', 'pay_at_destination'
+        )
 
 
 class OrderItemProductSerializer(serializers.ModelSerializer):

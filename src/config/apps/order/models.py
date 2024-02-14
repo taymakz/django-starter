@@ -196,8 +196,8 @@ class OrderItem(models.Model):
     def get_total_profit(self):
         if self.product.stockrecord.special_sale_price:
             return (
-                self.product.stockrecord.sale_price
-                - self.product.stockrecord.special_sale_price
+                    self.product.stockrecord.sale_price
+                    - self.product.stockrecord.special_sale_price
             )
         return 0
 
@@ -298,17 +298,17 @@ class Coupon(BaseModel):
     def clean(self):
         super().clean()
         if (
-            self.min_order_total is not None
-            and self.max_order_total is not None
-            and self.min_order_total > self.max_order_total
+                self.min_order_total is not None
+                and self.max_order_total is not None
+                and self.min_order_total > self.max_order_total
         ):
             raise ValidationError(
                 "Minimum order total cannot be greater than maximum order total."
             )
         if (
-            self.expire_at is not None
-            and self.start_at is not None
-            and self.expire_at <= self.start_at
+                self.expire_at is not None
+                and self.start_at is not None
+                and self.expire_at <= self.start_at
         ):
             raise ValidationError("expire date must be after start date.")
 
@@ -323,8 +323,8 @@ class Coupon(BaseModel):
             user = User.objects.filter(id=user_id).first()
             coupon_usage = CouponUsage.objects.filter(coupon=self, user=user).first()
             if (
-                coupon_usage is not None
-                and coupon_usage.usage_count >= self.max_usage_per_user
+                    coupon_usage is not None
+                    and coupon_usage.usage_count >= self.max_usage_per_user
             ):
                 return (
                     False,
@@ -333,16 +333,16 @@ class Coupon(BaseModel):
         if self.expire_at is not None and self.expire_at <= now():
             return False, "کد تخفیف معتبر نمیباشد"
         if (
-            self.min_order_total is not None
-            and order_total_price < self.min_order_total
+                self.min_order_total is not None
+                and order_total_price < self.min_order_total
         ):
             return (
                 False,
                 f"کد تخفیف وارد شده قابل استفاده برای سفارش های بیشتر از {self.min_order_total:,} می باشد",
             )
         if (
-            self.max_order_total is not None
-            and order_total_price > self.max_order_total
+                self.max_order_total is not None
+                and order_total_price > self.max_order_total
         ):
             return (
                 False,
@@ -357,7 +357,7 @@ class Coupon(BaseModel):
 
         if self.only_first_order:
             if Order.objects.filter(
-                user_id=user_id, payment_status=Order.PaymentStatusChoice.PAID
+                    user_id=user_id, payment_status=Order.PaymentStatusChoice.PAID
             ).exists():
                 return False, "کد تخفیف فقط برای اولین خرید قابل استفاده است"
 
@@ -401,7 +401,7 @@ class ShippingService(BaseModel):
         db_table = "shipping_service"
 
     def __str__(self):
-        return f"{self.name} : {self.url}"
+        return f"{self.name}"
 
 
 class ShippingRate(BaseModel):
@@ -422,10 +422,7 @@ class ShippingRate(BaseModel):
     class Meta:
         db_table = "shipping_rate"
         ordering = ("order",)
-        unique_together = [
-            ("service", "area", "is_public"),
-            ("service", "all_area", "is_public"),
-        ]
+        unique_together = ("service", "area", "all_area", "is_public", "is_deleted")
 
     def __str__(self):
         return (
@@ -437,9 +434,9 @@ class ShippingRate(BaseModel):
         return (
             0
             if self.pay_at_destination
-            or (
-                self.free_shipping_threshold
-                and order_price > self.free_shipping_threshold
-            )
+               or (
+                       self.free_shipping_threshold
+                       and order_price > self.free_shipping_threshold
+               )
             else self.price
         )

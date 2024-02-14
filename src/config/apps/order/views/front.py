@@ -9,11 +9,11 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
 from config.apps.catalog.models import Product, ProductImage, ProductAttributeValue
-from config.apps.order.models import Order, OrderItem
+from config.apps.order.models import Order, OrderItem, ShippingRate
 from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
-    OrderOpenSerializer,
+    OrderOpenSerializer, ShippingRateSerializer,
 )
 
 
@@ -416,3 +416,18 @@ class OrderItemClearView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+class OrderShippingListAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        queryset = ShippingRate.objects.select_related('service', 'service__image').filter(is_public=True,
+                                                                                           service__is_public=True).all()
+        serializer = ShippingRateSerializer(queryset, many=True)
+        return BaseResponse(
+            data=serializer.data,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.SUCCESS.value,
+        )
