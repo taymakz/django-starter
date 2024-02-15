@@ -1,5 +1,6 @@
 from django.core.cache import cache
 from django.db import models
+from django.db.models import Q
 from django.utils.timezone import now
 
 
@@ -30,7 +31,7 @@ class StockRecord(models.Model):
             if self.special_sale_price_end_at and not self.special_sale_price_start_at:
                 return True
             elif (
-                self.special_sale_price_start_at and not self.special_sale_price_end_at
+                    self.special_sale_price_start_at and not self.special_sale_price_end_at
             ):
                 return True
             elif self.special_sale_price_start_at and self.special_sale_price_end_at:
@@ -43,9 +44,9 @@ class StockRecord(models.Model):
             return self.special_sale_price_start_at <= now()
         elif self.special_sale_price_start_at and self.special_sale_price_end_at:
             return (
-                self.special_sale_price_start_at
-                <= now()
-                <= self.special_sale_price_end_at
+                    self.special_sale_price_start_at
+                    <= now()
+                    <= self.special_sale_price_end_at
             )
         else:
             return False
@@ -53,11 +54,11 @@ class StockRecord(models.Model):
     @property
     def final_price(self) -> int:
         if (
-            self.special_sale_price
-            and self.special_sale_price_start_at
-            and self.special_sale_price_end_at
+                self.special_sale_price
+                and self.special_sale_price_start_at
+                and self.special_sale_price_end_at
         ) and (
-            self.special_sale_price_start_at <= now() <= self.special_sale_price_end_at
+                self.special_sale_price_start_at <= now() <= self.special_sale_price_end_at
         ):
             return self.special_sale_price
         else:
@@ -74,7 +75,10 @@ class StockRecord(models.Model):
                 .prefetch_related("children")
                 .get(id=self.product.parent.id)
             )
-            childrens = parent_product.children.filter(is_public=True).select_related(
+            childrens = parent_product.children.select_related("parent", "parent__stockrecord").filter(Q(
+                Q(parent__stockrecord__num_stock__gt=0, parent__product_class__track_stock=True) |
+                Q(parent__product_class__track_stock=False)
+            ), is_public=True).select_related(
                 "stockrecord"
             )
 
@@ -89,25 +93,25 @@ class StockRecord(models.Model):
                     if item.stockrecord.sale_price < minimum_stock.sale_price:
                         minimum_stock = item.stockrecord
                     if (
-                        item.stockrecord.is_special_price_dates_valid
-                        and item.stockrecord.has_special_price_with_date
+                            item.stockrecord.is_special_price_dates_valid
+                            and item.stockrecord.has_special_price_with_date
                     ):
                         if (
-                            item.stockrecord.special_sale_price_start_at
-                            and item.stockrecord.special_sale_price_end_at
+                                item.stockrecord.special_sale_price_start_at
+                                and item.stockrecord.special_sale_price_end_at
                         ):
                             if (
-                                min_start_date is None
-                                or item.stockrecord.special_sale_price_start_at
-                                < min_start_date
+                                    min_start_date is None
+                                    or item.stockrecord.special_sale_price_start_at
+                                    < min_start_date
                             ):
                                 min_start_date = (
                                     item.stockrecord.special_sale_price_start_at
                                 )
                             if (
-                                max_end_date is None
-                                or item.stockrecord.special_sale_price_end_at
-                                > max_end_date
+                                    max_end_date is None
+                                    or item.stockrecord.special_sale_price_end_at
+                                    > max_end_date
                             ):
                                 max_end_date = (
                                     item.stockrecord.special_sale_price_end_at
