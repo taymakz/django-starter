@@ -3,6 +3,7 @@ from enum import Enum
 
 class ResponseMessage(Enum):
     # Result Messages
+    TIME_OUT = "خطای اتصال"
     SUCCESS = "عملیات با موفقیت انجام شد"
     FAILED = "خطایی در انجام عملیات رخ داده است"
     ACCESS_DENIED = "شما اجازه دسترسی ندارید"
@@ -64,5 +65,6 @@ class ResponseMessage(Enum):
     # Payment
     PAYMENT_NOT_VALID_SELECTED_ADDRESS = "آدرس انتخاب شده نامعتبر می باشد"
     PAYMENT_NOT_VALID_SELECTED_SHIPPING = "شیوه ارسال انتخاب شده نامعتبر می باشد"
+    PAYMENT_NOT_VALID_SELECTED_SHIPPING_OR_ADDRESS = "شیوه ارسال و یا آدرس انتخاب شده نامعتبر می باشد"
     PAYMENT_NOT_VALID_USED_COUPON = "کد تخفیف استفاده شده نامعتبر می باشد"
     PAYMENT_EMPTY_ORDER = "سبد خرید شما خالی می باشد"

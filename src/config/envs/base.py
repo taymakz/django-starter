@@ -21,6 +21,7 @@ CORS_ALLOWED_ORIGINS = (
     if os.environ.get("CORS_ALLOWED_ORIGINS")
     else []
 )
+
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
 BACKEND_URL = os.environ.get("BACKEND_URL")
 
@@ -28,6 +29,15 @@ FARAZ_SMS_API = os.environ.get("FARAZ_SMS_API")
 
 ZARINPAL_MERCHANT = os.environ.get("ZARINPAL_MERCHANT")
 ZARINPAL_SANDBOX = os.environ.get("ZARINPAL_SANDBOX") == "True"
+if ZARINPAL_SANDBOX:
+    sandbox = "sandbox"
+else:
+    sandbox = "www"
+ZP_API_REQUEST = f"https://{sandbox}.zarinpal.com/pg/rest/WebGate/PaymentRequest.json"
+ZP_API_VERIFY = (
+    f"https://{sandbox}.zarinpal.com/pg/rest/WebGate/PaymentVerification.json"
+)
+ZP_API_STARTPAY = f"https://{sandbox}.zarinpal.com/pg/StartPay/"
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -57,6 +67,7 @@ INTERNAL_APPS = [
     "config.apps.catalog",
     "config.apps.inventory",
     "config.apps.order",
+    "config.apps.transaction",
 ]
 INSTALLED_APPS = DJANGO_APPS + EXTERNAL_APPS + INTERNAL_APPS
 

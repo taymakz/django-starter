@@ -1,3 +1,4 @@
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q, Prefetch
 from django.utils.timezone import now
@@ -9,7 +10,7 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
 from config.apps.catalog.models import Product, ProductImage, ProductAttributeValue
-from config.apps.order.models import Order, OrderItem, ShippingRate
+from config.apps.order.models import Order, OrderItem, ShippingRate, Coupon
 from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
@@ -180,10 +181,16 @@ class OrderAddItemView(APIView):
             items_to_add = request.data.get("items_to_add", [])
             order_id = request.data.get("order_id", None)
             # Assuming that User Logged in and Local Order to Remote Order
+
+            order, _ = Order.objects.only('id', 'payment_status', 'lock').get_or_create(
+                user=request.user,
+                payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+            )
+            if order.lock:
+                return BaseResponse(
+                    status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+                )
             if not order_id:
-                order, _ = Order.objects.only('id').get_or_create(
-                    user=request.user,
-                    payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
                 order_id = order.id
 
             if not items_to_add:
@@ -287,11 +294,13 @@ class OrderItemIncreaseView(APIView):
                     "product__product_class__track_stock",
                     "order__user",
                     "order__payment_status",
+                    "order__lock"
                 )
                 .get(
                     product_id=product_id,
                     order__user=self.request.user,
                     order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+                    order__lock=False
                 )
             )
             max_allowed_count = order_item.product.stockrecord.in_order_limit
@@ -341,11 +350,13 @@ class OrderItemDecreaseView(APIView):
                     "product_id",
                     "order__user",
                     "order__payment_status",
+                    "order__lock"
                 )
                 .get(
                     product_id=product_id,
                     order__user=self.request.user,
                     order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+                    order__lock=False
                 )
             )
 
@@ -378,11 +389,12 @@ class OrderItemRemoveView(APIView):
             product_id = request.data.get("product_id")
 
             OrderItem.objects.select_related("order").only(
-                "id", "order__user", "order__payment_status", "product_id"
+                "id", "order__user", "order__payment_status", "order__lock", "product_id"
             ).get(
                 product_id=product_id,
                 order__user=self.request.user,
                 order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+                order__lock=False
             ).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -406,6 +418,7 @@ class OrderItemClearView(APIView):
                 order__user=request.user,
                 order__id=order_id,
                 order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+                order__lock=False
             ).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -431,3 +444,40 @@ class OrderShippingListAPIView(APIView):
             status=status.HTTP_200_OK,
             message=ResponseMessage.SUCCESS.value,
         )
+
+
+class OrderCouponUseAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('code')
+        user = request.user
+        try:
+            coupon = Coupon.objects.get(code=code)
+        except Coupon.DoesNotExist:
+            return BaseResponse(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ResponseMessage.COUPON_NOT_VALID.value
+            )
+        try:
+            user_current_order = Order.objects.get(user=user, payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
+            total_order = user_current_order.get_total_price()
+            valid, message = coupon.validate_coupon(user_id=user.id,
+                                                    order_total_price=total_order)
+            if valid:
+                new_price, dif_price, percentage_effect = coupon.calculate_discount(total_order)
+
+                return BaseResponse(
+                    data={"discount_amount": dif_price, "percentage_effect": percentage_effect},
+                    status=status.HTTP_204_NO_CONTENT,
+                    message=message
+                )
+            else:
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                    message=message)
+        except ObjectDoesNotExist:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value)
+        except Exception as e:
+            print(f"apps.order.views.front line 467 : {e}")
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value)

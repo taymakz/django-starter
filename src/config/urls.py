@@ -25,6 +25,8 @@ doc_patterns = [
     ),
 ]
 
+admin.autodiscover()
+
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("config.api.urls")),

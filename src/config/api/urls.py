@@ -66,6 +66,13 @@ front_urls = [
             namespace="order_front",
         ),
     ),
+    path(
+        "transaction/",
+        include(
+            ("config.apps.transaction.urls.front", "config.apps.transaction"),
+            namespace="transaction_front",
+        ),
+    ),
 ]
 
 urlpatterns = [] + admin_urls + front_urls

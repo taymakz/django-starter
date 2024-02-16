@@ -40,7 +40,7 @@ class Order(BaseModel):
         choices=PaymentStatusChoice,
         default=PaymentStatusChoice.OPEN_ORDER,
     )
-    lock_modify_until = models.DateTimeField(null=True, blank=True)  # use for payment
+    lock = models.BooleanField(default=False)  # use for payment
     repayment_expire_at = models.DateTimeField(blank=True, null=True)
 
     delivery_status = models.CharField(
@@ -134,7 +134,7 @@ class Order(BaseModel):
         if shipping.all_area:
             # Filter all ShippingPrice objects that are active and not equal to 'همه'
             other_shipping_areas = ShippingRate.objects.filter(
-                all_area=True, is_active=True
+                all_area=True, is_public=True
             )
             if user_address and user_address.receiver_province in [
                 shipping_area.area for shipping_area in other_shipping_areas
@@ -215,12 +215,15 @@ class OrderItem(models.Model):
 
 
 class OrderAddress(models.Model):
-    receiver_fullname = models.CharField(max_length=100)
+    receiver_name = models.CharField(max_length=100)
+    receiver_family = models.CharField(max_length=100)
     receiver_phone = models.CharField(max_length=11)
     receiver_city = models.CharField(max_length=100)
     receiver_province = models.CharField(max_length=100)
     receiver_postal_code = models.CharField(max_length=100)
     receiver_address = models.CharField(max_length=300)
+    receiver_building_number = models.CharField(max_length=24, null=True, blank=True)
+    receiver_unit = models.CharField(max_length=4, null=True, blank=True)
     receiver_national_code = models.CharField(max_length=11)
 
     class Meta:
@@ -268,10 +271,10 @@ class Coupon(BaseModel):
     )
     only_first_order = models.BooleanField(default=False)
 
-    only_categories = models.ManyToManyField("catalog.Category")
-    only_products = models.ManyToManyField("catalog.Product")
-    only_brands = models.ManyToManyField("catalog.Brand")
-    only_users = models.ManyToManyField("account.User")
+    # only_categories = models.ManyToManyField("catalog.Category")
+    # only_products = models.ManyToManyField("catalog.Product")
+    # only_brands = models.ManyToManyField("catalog.Brand")
+    # only_users = models.ManyToManyField("account.User")
 
     start_at = models.DateTimeField(blank=True, null=True)
     expire_at = models.DateTimeField(blank=True, null=True)
@@ -313,7 +316,6 @@ class Coupon(BaseModel):
             raise ValidationError("expire date must be after start date.")
 
     def validate_coupon(self, order_total_price, user_id):
-        # TODO : validation for only_categories  only_products  only_brands  only_users
 
         if self.max_usage is not None and self.max_usage <= self.usage_count:
             return False, "کد تخفیف به حداکثر حد مجاز استفاده رسیده است"
@@ -338,7 +340,7 @@ class Coupon(BaseModel):
         ):
             return (
                 False,
-                f"کد تخفیف وارد شده قابل استفاده برای سفارش های بیشتر از {self.min_order_total:,} می باشد",
+                f"کد تخفیف وارد شده قابل استفاده برای سفارش های بیشتر از {self.min_order_total:,} تومان می باشد",
             )
         if (
                 self.max_order_total is not None
@@ -346,7 +348,7 @@ class Coupon(BaseModel):
         ):
             return (
                 False,
-                f"کد تخفیف وارد شده قابل استفاده برای سفارش های کمتر از {self.max_order_total:,} می یباشد",
+                f"کد تخفیف وارد شده قابل استفاده برای سفارش های کمتر از {self.max_order_total:,} تومان می یباشد",
             )
 
         if self.start_at is not None and now() < self.start_at:
