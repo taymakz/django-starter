@@ -9,6 +9,7 @@ from config.api.enums import ResponseMessage
 from config.apps.user.address.models import UserAddresses
 from config.libs.db.models import BaseModel
 from config.libs.persian.province import province
+from .tasks import send_order_status_celery
 
 
 class Order(BaseModel):
@@ -107,6 +108,35 @@ class Order(BaseModel):
             f"( {self.get_payment_status_display()} ) : ( {self.get_delivery_status_display()} ) "
         )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.__original_status = self.delivery_status
+
+    def save(self, *args, **kwargs):
+        if self.delivery_status != self.__original_status:
+            if self.delivery_status == Order.DeliveryStatusChoice.PENDING:
+                self.send_order_status_notification('tmd3150snfzkgxj')
+            elif self.delivery_status == Order.DeliveryStatusChoice.PROCESSING:
+                self.send_order_status_notification('ufk0tlhnubtlsdj')
+
+            elif self.delivery_status == Order.DeliveryStatusChoice.SHIPPED:
+                self.shipped_at = now()
+                self.send_order_status_notification('fnhgvsuo2fxg5vn')
+            elif self.delivery_status == Order.DeliveryStatusChoice.DELIVERED:
+                self.delivered_at = now()
+
+            self.delivery_status_modified_at = now()
+            self.__original_status = self.delivery_status
+
+        if not self.slug:
+            self.slug = self.generate_unique_slug()
+
+        super().save(*args, **kwargs)
+
+    def send_order_status_notification(self, pattern):
+        send_order_status_celery.delay(to=self.user.phone, pattern=pattern, number=self.slug,
+                                       track_code=self.tracking_code)
+
     def get_absolute_url(self):
         return f"/panel/orders/{self.slug}"
 
@@ -156,9 +186,7 @@ class Order(BaseModel):
         return sum(item.get_total_price() for item in self.items.all())
 
     def get_payment_price(self):
-        return self.get_total_price() + self.shipping_rate.calculate_price(
-            order_price=self.get_total_price()
-        )
+        return (self.get_total_price() - self.final_coupon_effect_price) + self.final_shipping_effect_price
 
 
 class OrderItem(models.Model):

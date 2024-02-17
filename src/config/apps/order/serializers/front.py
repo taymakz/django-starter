@@ -127,9 +127,9 @@ class OrderPendingSerializer(serializers.ModelSerializer):
         )
 
     def get_price(self, obj: Order):
-        return obj.get_payment_price
+        return obj.get_payment_price()
 
-    def get_repayment_date_expire(self, obj: Order):
+    def get_repayment_expire_at(self, obj: Order):
         return model_date_field_convertor(obj.repayment_expire_at)
 
 

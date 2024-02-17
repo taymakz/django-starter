@@ -11,12 +11,16 @@ class Transaction(BaseModel):
         SUCCESS = "پرداخت موفق"
         FAILED = "پرداخت ناموفق"
         OTHER = "نا مشخص"
+        CANCEL_BY_USER = "پرداخت توسط کاربر کنسل شده است"
+        WAITING = "در انتظار برای انتقال کاربر به درگاه بانک"
+        RETURN_FROM_BANK = "کاربر از درگاه برگشته"
+        REDIRECT_TO_BANK = "کاربر به درگاه انتقال یافت"
 
     user = models.ForeignKey('account.User', on_delete=models.SET_NULL, blank=True, null=True,
                              related_name='transactions')
     order = models.ForeignKey('order.Order', on_delete=models.SET_NULL, blank=True, null=True,
                               related_name='transactions')
-    status = models.CharField(max_length=20, choices=TransactionStatusChoice, blank=True, null=True)
+    status = models.CharField(max_length=55, choices=TransactionStatusChoice, blank=True, null=True)
     failed_reason = models.TextField(blank=True, null=True)
     transaction_number = models.CharField(max_length=50, blank=True, null=True)  # شماره پیگیری
     slug = models.SlugField(max_length=6, unique=True, blank=True, null=True)
