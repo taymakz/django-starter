@@ -278,7 +278,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         return obj.product_class.track_stock
 
     def get_description(self, obj: Product):
-        return markdown.markdown(obj.description)
+        return markdown.markdown(obj.description) if obj.description else None
 
 
 # this is only For Schema
@@ -301,6 +301,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
             "url",
             "title_ir",
             "title_en",
+            "description",
             "stockrecord",
             "brand",
             "meta_title",
