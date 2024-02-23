@@ -218,6 +218,7 @@ class ProductClassSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductClass
         fields = (
+            "id",
             "title_ir",
             "title_en",
             "track_stock",
