@@ -46,9 +46,9 @@ class ResponseMessage(Enum):
     ORDER_ITEM_REMOVED = "محصول از سبد خرید حذف شد"
     ORDER_ITEM_CLEARED = "تمامی محصولات سبد خرید حذف شد"
     # Favorite
-    PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY = "محصول با موفقیت به علاقه مندی‌ها اضافه شد"
+    PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY = "محصول به علاقه مندی‌ها اضافه شد"
     PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY = (
-        "محصول با موفقیت از علاقه مندی‌ها حذف شد"
+        "محصول از علاقه مندی‌ها حذف شد"
     )
 
     # User Panel Address

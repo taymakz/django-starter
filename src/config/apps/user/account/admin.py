@@ -2,7 +2,8 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, RecycleUser, UserPreviousDetailHistory, UserPasswordResetToken
+from .models import User, RecycleUser, UserPreviousDetailHistory, UserPasswordResetToken, UserSearchHistory, \
+    UserFavoriteProduct, UserRecentVisitedProduct
 
 
 class UserForm(forms.ModelForm):
@@ -54,6 +55,21 @@ class UserAdmin(UserAdmin):
     def delete_queryset(self, request, queryset):
         for obj in queryset:
             obj.delete()
+
+
+@admin.register(UserSearchHistory)
+class UserSearchHistoryAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserFavoriteProduct)
+class UserFavoriteProductAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserRecentVisitedProduct)
+class UserRecentVisitedProductAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(RecycleUser)

@@ -44,4 +44,9 @@ urlpatterns = [
         front.UserForgotPasswordResetView.as_view(),
         name="user_forgot_password_otp",
     ),
+
+    path('favorite/', front.UserFavoriteProductView.as_view(), name='user_favorite_product'),
+    path('recent-product/', front.UserRecentVisitedProductView.as_view(), name='user_recent_product'),
+    path('search-history/', front.UserSearchHistoryView.as_view(), name='user_search_history'),
+
 ]

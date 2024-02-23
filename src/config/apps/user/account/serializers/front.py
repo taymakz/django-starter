@@ -1,11 +1,21 @@
 from rest_framework import serializers
 
-from ..models import User
+from ..models import User, UserSearchHistory
+
+
+class UserSearchHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserSearchHistory
+        fields = (
+            "id",
+            "search"
+        )
 
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name")
     has_password = serializers.CharField(source="has_usable_password")
+    search_histories = UserSearchHistorySerializer(many=True)
 
     class Meta:
         model = User
@@ -19,6 +29,7 @@ class UserSerializer(serializers.ModelSerializer):
             "is_superuser",
             "is_verify",
             "has_password",
+            "search_histories",
         )
 
 

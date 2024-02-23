@@ -13,7 +13,8 @@ from config.apps.messages.verification.models import (
     VerifyOTPService,
 )
 from config.apps.user.account.enums import UserAuthenticationCheckSectionEnum
-from config.apps.user.account.models import User, UserPasswordResetToken
+from config.apps.user.account.models import User, UserPasswordResetToken, UserFavoriteProduct, UserSearchHistory, \
+    UserRecentVisitedProduct
 from config.apps.user.account.serializers.front import (
     UserSerializer,
     UserLogoutSerializer,
@@ -33,8 +34,11 @@ class RequestCurrentUserView(RetrieveAPIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        return User.objects.prefetch_related('search_histories')
+
     def get_object(self):
-        return self.request.user
+        return self.get_queryset().get(pk=self.request.user.pk)
 
     def get(self, request, *args, **kwargs):
         try:
@@ -595,3 +599,117 @@ class UserForgotPasswordResetView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+# class UserFavoriteProductListAPIView(ListAPIView):
+#     serializer_class = UserFavoriteProductSerializer
+#     permission_classes = [IsAuthenticated]
+#
+#     def get_queryset(self):
+#         user = self.request.user
+#         favorite_products = UserFavoriteProducts.objects.filter(user=user, is_delete=False).order_by('-id')
+#         products = [favorite.product for favorite in favorite_products]
+#         return products
+
+
+class UserFavoriteProductView(APIView):
+
+    def post(self, request):
+
+        try:
+            user = request.user
+            product_ids = request.data.get('product_ids', [])
+            if not product_ids:
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                    message=ResponseMessage.FAILED.value)
+
+            user_favorites = UserFavoriteProduct.objects.select_related('product').only('id', 'user',
+                                                                                        'product_id').filter(
+                user=user)
+            user_favorite_product_ids = list([product.product.id for product in user_favorites])
+            if len(product_ids) == 1:
+                if product_ids[0] in user_favorite_product_ids:
+                    user_favorites.get(product_id=product_ids[0]).delete()
+                    return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                        message=ResponseMessage.PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY.value)
+
+                # check if user already have 20 favorites, remove the oldest one
+                if len(user_favorite_product_ids) >= 20:
+                    user_favorites.filter(user=user).order_by('created_at').first().delete()
+
+                UserFavoriteProduct.objects.create(user=user, product_id=product_ids[0])
+
+                return BaseResponse(status=status.HTTP_201_CREATED,
+                                    message=ResponseMessage.PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY.value)
+            else:
+                for product_id in product_ids:
+                    if product_id not in user_favorite_product_ids:
+                        UserFavoriteProduct.objects.get_or_create(user=user, product_id=product_id)
+                return BaseResponse(status=status.HTTP_201_CREATED,
+                                    message=ResponseMessage.PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY.value)
+        except Exception as e:
+            print(e)
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+    def delete(self, request):
+        try:
+            user = request.user
+            product_id = request.data.get('id')
+            UserFavoriteProduct.objects.get(user=user, product_id=product_id).delete()
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                message=ResponseMessage.PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY.value)
+        except UserFavoriteProduct.DoesNotExist:
+            return BaseResponse(status=status.HTTP_404_NOT_FOUND,
+                                message=ResponseMessage.FAILED.value
+                                )
+        except Exception as e:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+
+class UserSearchHistoryView(APIView):
+    def post(self, request):
+        search = request.data.get('search')
+        if not search:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        try:
+            user = request.user
+            UserSearchHistory.objects.get_or_create(user=user, search=search)
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                message=ResponseMessage.SUCCESS.value)
+        except Exception as e:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+    def delete(self, request):
+        # NOTE : Clear User All Search History
+        try:
+            user = request.user
+
+            UserSearchHistory.objects.filter(user=user).delete()
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                message=ResponseMessage.SUCCESS.value)
+        except Exception as e:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+
+class UserRecentVisitedProductView(APIView):
+    def post(self, request):
+        product_ids = request.data.get('product_ids', [])
+        if not product_ids:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        try:
+            user = request.user
+            for id in product_ids:
+                UserRecentVisitedProduct.objects.get_or_create(user=user, product_id=id)
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                message=ResponseMessage.SUCCESS.value)
+        except Exception as e:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
