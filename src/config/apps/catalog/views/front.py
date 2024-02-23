@@ -13,7 +13,7 @@ from config.apps.catalog.models import (
     ProductImage,
     OptionGroup,
     ProductAttributeValue,
-    ProductPropertyValue,
+    ProductPropertyValue, OptionGroupValue,
 )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
@@ -133,8 +133,10 @@ class ProductDetailView(APIView):
                     "value_option",
                     "value_option__group",
                     "attribute__option_group",
+
                 )
-                .prefetch_related("value_multi_option"),
+                .prefetch_related(
+                    Prefetch("value_multi_option", queryset=OptionGroupValue.objects.select_related('group').all())),
             )
             prefetch_properties = Prefetch(
                 "properties",
@@ -225,6 +227,7 @@ class ProductDetailView(APIView):
             )
 
         except Exception as e:
+            print(e)
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
