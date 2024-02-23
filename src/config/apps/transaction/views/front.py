@@ -238,7 +238,7 @@ class TransactionRequest(APIView):
             "Amount": order_total_price,
             "Description": "نهایی کردن خرید سفارش",
             "Phone": user.phone,
-            "CallbackURL": f"{settings.BACKEND_URL}/api/transaction/verify?order={current_order.slug}&tn={transaction.transaction_number}",
+            "CallbackURL": f"{settings.SITE_URL}/api/transaction/verify?order={current_order.slug}&tn={transaction.transaction_number}",
         }
         data = json.dumps(data)
         # set content length by data
@@ -369,7 +369,7 @@ class TransactionRePaymentRequest(APIView):
             "Amount": order_total_price,
             "Description": "نهایی کردن خرید سفارش",
             "Phone": user.phone,
-            "CallbackURL": f"{settings.BACKEND_URL}/api/transaction/verify?order={pending_order.slug}&tn={transaction.transaction_number}",
+            "CallbackURL": f"{settings.SITE_URL}/api/transaction/verify?order={pending_order.slug}&tn={transaction.transaction_number}",
         }
         data = json.dumps(data)
         # set content length by data

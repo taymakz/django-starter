@@ -274,6 +274,7 @@ class Product(BaseModel):
     slug = models.SlugField(unique=True, allow_unicode=True, null=True, blank=True)
     short_slug = models.IntegerField(unique=True, null=True, blank=True, editable=False)
     upc = UpperCaseCharField(max_length=24, unique=True, null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
     is_public = models.BooleanField(default=True)
     meta_title = models.CharField(max_length=128, null=True, blank=True)
     meta_description = models.TextField(null=True, blank=True)

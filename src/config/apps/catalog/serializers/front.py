@@ -1,3 +1,4 @@
+import markdown
 from rest_framework import serializers
 
 from config.apps.catalog.models import (
@@ -244,6 +245,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     brand = BrandSerializer()
     properties = ProductPropertyValueSerializer(many=True)
     track_stock = serializers.SerializerMethodField()
+    description = serializers.SerializerMethodField()
     url = serializers.CharField(source="get_absolute_url")
 
     class Meta:
@@ -257,6 +259,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "title_ir",
             "title_en",
             "short_slug",
+            "description",
             "stockrecord",
             "track_stock",
             "brand",
@@ -273,6 +276,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     def get_track_stock(self, obj: Product):
         return obj.product_class.track_stock
+
+    def get_description(self, obj: Product):
+        return markdown.markdown(obj.description)
 
 
 # this is only For Schema

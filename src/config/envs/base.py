@@ -23,7 +23,7 @@ CORS_ALLOWED_ORIGINS = (
 )
 
 FRONTEND_URL = os.environ.get("FRONTEND_URL")
-BACKEND_URL = os.environ.get("BACKEND_URL")
+SITE_URL = os.environ.get("SITE_URL")
 
 FARAZ_SMS_API = os.environ.get("FARAZ_SMS_API")
 
@@ -56,6 +56,7 @@ EXTERNAL_APPS = [
     "imagekit",
     "treenode",
     "jalali_date",
+
 ]
 INTERNAL_APPS = [
     "config.api",
