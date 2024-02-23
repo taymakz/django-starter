@@ -11,7 +11,7 @@ from config.apps.catalog.models import (
     ProductAttribute,
     ProductImage,
     ProductProperty,
-    ProductPropertyValue,
+    ProductPropertyValue, ProductClass,
 )
 from config.apps.inventory.serializers.front import (
     StockRecordCardSerializer,
@@ -214,6 +214,17 @@ class ProductPropertyValueSerializer(serializers.ModelSerializer):
         fields = ("id", "property", "value")
 
 
+class ProductClassSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductClass
+        fields = (
+            "title_ir",
+            "title_en",
+            "track_stock",
+            "require_shipping",
+        )
+
+
 class ProductDetailChildrenSerializer(serializers.ModelSerializer):
     stockrecord = StockRecordSerializer()
     images = ProductImageSerializer(many=True)
@@ -239,12 +250,12 @@ class ProductDetailChildrenSerializer(serializers.ModelSerializer):
 
 # product Detail
 class ProductDetailSerializer(serializers.ModelSerializer):
+    product_class = ProductClassSerializer()
     attribute_values = ProductAttributeValueSerializer(many=True)
     stockrecord = StockRecordSerializer()
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
     properties = ProductPropertyValueSerializer(many=True)
-    track_stock = serializers.SerializerMethodField()
     description = serializers.SerializerMethodField()
     url = serializers.CharField(source="get_absolute_url")
 
@@ -252,6 +263,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             "id",
+            "product_class",
             "structure",
             "attribute_values",
             "images",
@@ -261,7 +273,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "short_slug",
             "description",
             "stockrecord",
-            "track_stock",
             "brand",
             "meta_title",
             "meta_description",
@@ -274,15 +285,13 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             data["attribute_values"] = None
         return data
 
-    def get_track_stock(self, obj: Product):
-        return obj.product_class.track_stock
-
     def get_description(self, obj: Product):
         return markdown.markdown(obj.description) if obj.description else None
 
 
 # this is only For Schema
 class ProductDetailSchemaSerializer(serializers.ModelSerializer):
+    product_class = ProductClassSerializer()
     children = ProductDetailChildrenSerializer(many=True)
     attribute_values = ProductAttributeValueSerializer(many=True)
     stockrecord = StockRecordSerializer()
@@ -294,6 +303,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
         model = Product
         fields = (
             "id",
+            "product_class",
             "structure",
             "children",
             "attribute_values",
