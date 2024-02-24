@@ -117,6 +117,29 @@ class ProductDetailView(APIView):
                 ],
             )
 
+            primary_image_subquery = ProductImage.objects.filter(
+                product=OuterRef("pk")
+            ).values("image__file")[:1]
+            prefetch_recommended_products = Prefetch(
+                "recommended_products",
+                queryset=Product.objects.only(
+                    "id",
+                    "title_ir",
+                    "title_en",
+                    "slug",
+                    "short_slug",
+                    "brand__title_en",
+                    "brand__title_ir",
+                    "brand__slug",
+                    "product_class__track_stock",
+                )
+                .select_related("brand", "stockrecord", "product_class")
+                .filter(
+                    is_public=True,
+                )
+                .annotate(primary_image_file=Subquery(primary_image_subquery))
+            )
+
             prefetch_images = Prefetch(
                 "images",
                 queryset=ProductImage.objects.all()
@@ -164,7 +187,7 @@ class ProductDetailView(APIView):
                         "stockrecord", "brand", "brand__image", "product_class"
                     )
                     .prefetch_related(
-                        prefetch_images, prefetch_attributes, prefetch_properties
+                        prefetch_recommended_products, prefetch_images, prefetch_attributes, prefetch_properties
                     )
                 )
 
@@ -203,6 +226,7 @@ class ProductDetailView(APIView):
                     "stockrecord", "brand", "brand__image", "product_class"
                 )
                 .prefetch_related(
+                    prefetch_recommended_products,
                     prefetch_images,
                     prefetch_attributes,
                     prefetch_properties,

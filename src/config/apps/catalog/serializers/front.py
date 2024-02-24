@@ -92,6 +92,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = (
+            "id",
             "image",
             "title_ir",
             "title_en",
@@ -259,6 +260,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     properties = ProductPropertyValueSerializer(many=True)
     description = serializers.SerializerMethodField()
     url = serializers.CharField(source="get_absolute_url")
+    recommended_products = ProductCardSerializer(many=True)
 
     class Meta:
         model = Product
@@ -278,6 +280,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "meta_title",
             "meta_description",
             "properties",
+            "recommended_products",
+
         )
 
     def to_representation(self, instance):
@@ -299,6 +303,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
     url = serializers.CharField(source="get_absolute_url")
+    recommended_products = ProductCardSerializer(many=True)
 
     class Meta:
         model = Product
@@ -317,6 +322,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
             "brand",
             "meta_title",
             "meta_description",
+            "recommended_products",
         )
 
     def to_representation(self, instance):

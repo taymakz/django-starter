@@ -60,8 +60,11 @@ class GetHomeDataView(APIView):
 
                 brand_products = (
                     Product.objects.only(
+                        "id",
                         "title_ir",
                         "title_en",
+                        "slug",
+                        "short_slug",
                         "brand__title_en",
                         "brand__title_ir",
                         "brand__slug",
