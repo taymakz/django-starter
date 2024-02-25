@@ -14,7 +14,13 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
 from config.apps.catalog.models import Product
-from config.apps.order.models import Order, ShippingRate, OrderAddress, Coupon, OrderItem
+from config.apps.order.models import (
+    Order,
+    ShippingRate,
+    OrderAddress,
+    Coupon,
+    OrderItem,
+)
 from config.apps.transaction.models import Transaction
 from config.apps.user.address.models import UserAddresses
 
@@ -26,14 +32,10 @@ class TransactionResult(APIView):
     def get(self, request, transaction_number, transaction_slug):
         try:
             # Filter the Transaction model based on the provided criteria
-            transaction = (
-                Transaction.objects.select_related("order").get(
-                    transaction_number=transaction_number,
-                    slug=transaction_slug,
-                    created_at__gte=(now() - timedelta(hours=1)),
-
-                )
-
+            transaction = Transaction.objects.select_related("order").get(
+                transaction_number=transaction_number,
+                slug=transaction_slug,
+                created_at__gte=(now() - timedelta(hours=1)),
             )
             order = transaction.order
             # Prepare the CheckoutResultDTO
@@ -55,7 +57,7 @@ class TransactionResult(APIView):
             return BaseResponse(status=status.HTTP_404_NOT_FOUND)
 
         except Exception as e:
-            print(f'exception on transacction.views.front line 63 : {e}')
+            print(f"exception on transacction.views.front line 63 : {e}")
             return BaseResponse(status=status.HTTP_404_NOT_FOUND)
 
 
@@ -67,60 +69,84 @@ class TransactionRequest(APIView):
         user = request.user
         try:
 
-            current_order: Order = (Order.objects
-            .prefetch_related(Prefetch('items',
-                                       queryset=OrderItem.objects.select_related(
-                                           'product',
-                                           'product__product_class',
-                                           'product__parent__product_class',
-                                           'product__stockrecord')))
-            .select_related(
-                'shipping_rate',
-                'address').get(
-                user=user,
-                payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
-                lock=False
-            ))
+            current_order: Order = (
+                Order.objects.prefetch_related(
+                    Prefetch(
+                        "items",
+                        queryset=OrderItem.objects.select_related(
+                            "product",
+                            "product__product_class",
+                            "product__parent__product_class",
+                            "product__stockrecord",
+                        ),
+                    )
+                )
+                .select_related("shipping_rate", "address")
+                .get(
+                    user=user,
+                    payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+                    lock=False,
+                )
+            )
             current_order.lock = True
 
             current_order.save()
 
         except Order.DoesNotExist:
-            return BaseResponse(data={"redirect_to": "/checkout/cart/"}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                data={"redirect_to": "/checkout/cart/"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
+            )
         if current_order.items.count() == 0:
             current_order.lock = False
             current_order.save()
-            return BaseResponse(data={"redirect_to": "/checkout/cart/"}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
-        address = request.data.get('address', None)
-        shipping = request.data.get('shipping', None)
+            return BaseResponse(
+                data={"redirect_to": "/checkout/cart/"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
+            )
+        address = request.data.get("address", None)
+        shipping = request.data.get("shipping", None)
 
         if not address or not shipping:
             current_order.lock = False
             current_order.save()
-            return BaseResponse(data={"redirect_to": "/checkout/shipping/"}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                data={"redirect_to": "/checkout/shipping/"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
+            )
 
         try:
-            selected_shipping = ShippingRate.objects.get(id=shipping['id'], is_public=True)
-            selected_address = UserAddresses.objects.get(user=user, id=address['id'])
+            selected_shipping = ShippingRate.objects.get(
+                id=shipping["id"], is_public=True
+            )
+            selected_address = UserAddresses.objects.get(user=user, id=address["id"])
         except (ShippingRate.DoesNotExist, UserAddresses.DoesNotExist):
             current_order.lock = False
             current_order.save()
-            return BaseResponse(data={"redirect_to": "/checkout/shipping/"}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.PAYMENT_NOT_VALID_SELECTED_SHIPPING_OR_ADDRESS.value)
+            return BaseResponse(
+                data={"redirect_to": "/checkout/shipping/"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.PAYMENT_NOT_VALID_SELECTED_SHIPPING_OR_ADDRESS.value,
+            )
 
         # Validate Address and Shipping Service
-        is_valid_shipping, shipping_validate_message = current_order.is_valid_shipping_method(
-            user_address=selected_address,
-            shipping=selected_shipping)
+        is_valid_shipping, shipping_validate_message = (
+            current_order.is_valid_shipping_method(
+                user_address=selected_address, shipping=selected_shipping
+            )
+        )
 
         if not is_valid_shipping:
             current_order.lock = False
             current_order.save()
-            return BaseResponse(data={"redirect_to": "/checkout/shipping/"}, status=status.HTTP_400_BAD_REQUEST,
-                                message=shipping_validate_message)
+            return BaseResponse(
+                data={"redirect_to": "/checkout/shipping/"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=shipping_validate_message,
+            )
 
         if current_order.address:
             # Update the existing address instead of deleting it
@@ -135,9 +161,7 @@ class TransactionRequest(APIView):
             current_order.address.receiver_building_number = (
                 selected_address.receiver_building_number
             )
-            current_order.address.receiver_unit = (
-                selected_address.receiver_unit
-            )
+            current_order.address.receiver_unit = selected_address.receiver_unit
             current_order.address.receiver_address = selected_address.receiver_address
             current_order.address.save()
         else:
@@ -157,8 +181,10 @@ class TransactionRequest(APIView):
         current_order.shipping_rate = selected_shipping
         current_order.save()
         # Address and Shipping are Valid.
-        coupon_code = request.data.get('coupon_code', None)
-        order_total_price = order_total_price_before_coupon = current_order.get_total_price()
+        coupon_code = request.data.get("coupon_code", None)
+        order_total_price = order_total_price_before_coupon = (
+            current_order.get_total_price()
+        )
         order_shipping_effect_price = current_order.shipping_rate.calculate_price(
             order_price=order_total_price_before_coupon
         )
@@ -217,7 +243,7 @@ class TransactionRequest(APIView):
             Transaction.objects.create(
                 user=user,
                 order=current_order,
-                status=Transaction.TransactionStatusChoice.SUCCESS
+                status=Transaction.TransactionStatusChoice.SUCCESS,
             )
             current_order.lock = False
             current_order.save()
@@ -231,8 +257,11 @@ class TransactionRequest(APIView):
             )
         if order_total_price < 1000:
             order_total_price = 1000
-        transaction = Transaction.objects.create(user=user, order=current_order,
-                                                 status=Transaction.TransactionStatusChoice.WAITING)
+        transaction = Transaction.objects.create(
+            user=user,
+            order=current_order,
+            status=Transaction.TransactionStatusChoice.WAITING,
+        )
         data = {
             "MerchantID": settings.ZARINPAL_MERCHANT,
             "Amount": order_total_price,
@@ -253,18 +282,24 @@ class TransactionRequest(APIView):
                 response = response.json()
                 if response["Status"] == 100:
                     current_order.final_coupon_effect_price = coupon_effect_dif_price
-                    current_order.final_shipping_effect_price = order_shipping_effect_price
-                    current_order.payment_status = Order.PaymentStatusChoice.PENDING_PAYMENT
+                    current_order.final_shipping_effect_price = (
+                        order_shipping_effect_price
+                    )
+                    current_order.payment_status = (
+                        Order.PaymentStatusChoice.PENDING_PAYMENT
+                    )
                     current_order.lock = False
 
                     current_order.save()
-                    transaction.status = Transaction.TransactionStatusChoice.REDIRECT_TO_BANK
+                    transaction.status = (
+                        Transaction.TransactionStatusChoice.REDIRECT_TO_BANK
+                    )
                     transaction.save()
                     return BaseResponse(
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                                                    + str(response["Authority"]),
+                            + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -323,11 +358,8 @@ class TransactionRePaymentRequest(APIView):
                 slug=order_slug,
                 user=user,
                 payment_status=Order.PaymentStatusChoice.PENDING_PAYMENT,
-
                 lock=False,
-                repayment_expire_at__gte=(
-                        now() - timedelta(hours=1)
-                ),
+                repayment_expire_at__gte=(now() - timedelta(hours=1)),
             )
 
             pending_order.lock = True
@@ -338,7 +370,11 @@ class TransactionRePaymentRequest(APIView):
                 status=status.HTTP_404_NOT_FOUND,
                 message=ResponseMessage.FAILED.value,
             )
-        if pending_order.items.count() == 0 or pending_order.shipping_rate is None or pending_order.address is None:
+        if (
+            pending_order.items.count() == 0
+            or pending_order.shipping_rate is None
+            or pending_order.address is None
+        ):
             pending_order.lock = False
             pending_order.save()
             return BaseResponse(
@@ -347,9 +383,11 @@ class TransactionRePaymentRequest(APIView):
                 message=ResponseMessage.FAILED.value,
             )
         # Validate Address and Shipping Service
-        is_valid_shipping, shipping_validate_message = pending_order.is_valid_shipping_method(
-            user_address=pending_order.address,
-            shipping=pending_order.shipping_rate)
+        is_valid_shipping, shipping_validate_message = (
+            pending_order.is_valid_shipping_method(
+                user_address=pending_order.address, shipping=pending_order.shipping_rate
+            )
+        )
         if not is_valid_shipping:
             pending_order.lock = False
             pending_order.save()
@@ -362,8 +400,11 @@ class TransactionRePaymentRequest(APIView):
 
         if order_total_price < 1000:
             order_total_price = 1000
-        transaction = Transaction.objects.create(user=user, order=pending_order,
-                                                 status=Transaction.TransactionStatusChoice.WAITING)
+        transaction = Transaction.objects.create(
+            user=user,
+            order=pending_order,
+            status=Transaction.TransactionStatusChoice.WAITING,
+        )
         data = {
             "MerchantID": settings.ZARINPAL_MERCHANT,
             "Amount": order_total_price,
@@ -384,13 +425,15 @@ class TransactionRePaymentRequest(APIView):
                 if response["Status"] == 100:
                     pending_order.lock = False
                     pending_order.save()
-                    transaction.status = Transaction.TransactionStatusChoice.REDIRECT_TO_BANK
+                    transaction.status = (
+                        Transaction.TransactionStatusChoice.REDIRECT_TO_BANK
+                    )
                     transaction.save()
                     return BaseResponse(
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                                                    + str(response["Authority"]),
+                            + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -446,13 +489,20 @@ class TransactionVerify(APIView):
         transaction_number = request.GET.get("tn")
 
         try:
-            current_order = Order.objects.prefetch_related(Prefetch('items',
-                                                                    queryset=OrderItem.objects.select_related('product',
-                                                                                                              'product__product_class',
-                                                                                                              'product__parent__product_class',
-                                                                                                              'product__stockrecord').all())).get(
-                slug=order_slug)
-            transaction = Transaction.objects.get(transaction_number=transaction_number, order=current_order)
+            current_order = Order.objects.prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=OrderItem.objects.select_related(
+                        "product",
+                        "product__product_class",
+                        "product__parent__product_class",
+                        "product__stockrecord",
+                    ).all(),
+                )
+            ).get(slug=order_slug)
+            transaction = Transaction.objects.get(
+                transaction_number=transaction_number, order=current_order
+            )
         except Order.DoesNotExist:
             return redirect(
                 f"{settings.FRONTEND_URL}/vf/tm?f={ResponseMessage.FAILED.value}"
@@ -536,7 +586,9 @@ class TransactionVerify(APIView):
                 transaction.save()
                 if response["Status"] == -51:
                     current_order.set_repayment_expire_date()
-                    transaction.status = Transaction.TransactionStatusChoice.CANCEL_BY_USER
+                    transaction.status = (
+                        Transaction.TransactionStatusChoice.CANCEL_BY_USER
+                    )
                     transaction.failed_reason = reason
                     transaction.save()
                 else:

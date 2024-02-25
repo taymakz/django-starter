@@ -14,7 +14,8 @@ from config.apps.order.models import Order, OrderItem, ShippingRate, Coupon
 from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
-    OrderOpenSerializer, ShippingRateSerializer,
+    OrderOpenSerializer,
+    ShippingRateSerializer,
 )
 
 
@@ -26,7 +27,9 @@ class OrderItemsValidateLocalView(APIView):
         products_id = request.data.get("products_id", [])
 
         valid_ids = (
-            Product.objects.select_related("stockrecord", "product_class", "parent", "parent__product_class")
+            Product.objects.select_related(
+                "stockrecord", "product_class", "parent", "parent__product_class"
+            )
             .only(
                 "id",
                 "is_public",
@@ -37,22 +40,27 @@ class OrderItemsValidateLocalView(APIView):
                 "stockrecord__num_stock",
             )
             .filter(
-
                 Q(
-                    Q(stockrecord__num_stock__gt=0, product_class__track_stock=True) |
-                    Q(product_class__track_stock=False)
-                ) |
-                Q(
-                    Q(parent__stockrecord__num_stock__gt=0, parent__product_class__track_stock=True) |
-                    Q(parent__product_class__track_stock=False)
+                    Q(stockrecord__num_stock__gt=0, product_class__track_stock=True)
+                    | Q(product_class__track_stock=False)
+                )
+                | Q(
+                    Q(
+                        parent__stockrecord__num_stock__gt=0,
+                        parent__product_class__track_stock=True,
+                    )
+                    | Q(parent__product_class__track_stock=False)
                 ),
                 id__in=products_id,
                 is_public=True,
-                structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.child]
-
-            ).values('id')
+                structure__in=[
+                    Product.ProductTypeChoice.standalone,
+                    Product.ProductTypeChoice.child,
+                ],
+            )
+            .values("id")
         )
-        valid_id_list = [item['id'] for item in valid_ids]
+        valid_id_list = [item["id"] for item in valid_ids]
         return BaseResponse(
             data=valid_id_list,
             status=status.HTTP_204_NO_CONTENT,
@@ -145,8 +153,8 @@ class OrderGetView(APIView):
                     order
                     for order in orders
                     if order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
-                       and order.repayment_expire_at
-                       and order.repayment_expire_at >= now()
+                    and order.repayment_expire_at
+                    and order.repayment_expire_at >= now()
                 ]
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
@@ -182,26 +190,30 @@ class OrderAddItemView(APIView):
             order_id = request.data.get("order_id", None)
             # Assuming that User Logged in and Local Order to Remote Order
 
-            order, _ = Order.objects.only('id', 'payment_status', 'lock').get_or_create(
+            order, _ = Order.objects.only("id", "payment_status", "lock").get_or_create(
                 user=request.user,
                 payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
             )
             if order.lock:
                 return BaseResponse(
-                    status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.FAILED.value,
                 )
             if not order_id:
                 order_id = order.id
 
             if not items_to_add:
                 return BaseResponse(
-                    status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.FAILED.value,
                 )
-            products_id = [item['product_id'] for item in items_to_add]
+            products_id = [item["product_id"] for item in items_to_add]
 
             # Retrieve products with is_public=True
             valid_products = (
-                Product.objects.select_related("stockrecord", "product_class", "parent", "parent__product_class")
+                Product.objects.select_related(
+                    "stockrecord", "product_class", "parent", "parent__product_class"
+                )
                 .only(
                     "id",
                     "structure",
@@ -213,33 +225,41 @@ class OrderAddItemView(APIView):
                 )
                 .filter(
                     Q(
-                        Q(stockrecord__num_stock__gt=0, product_class__track_stock=True) |
-                        Q(product_class__track_stock=False)
-                    ) |
-                    Q(
-                        Q(parent__stockrecord__num_stock__gt=0, parent__product_class__track_stock=True) |
-                        Q(parent__product_class__track_stock=False)
+                        Q(stockrecord__num_stock__gt=0, product_class__track_stock=True)
+                        | Q(product_class__track_stock=False)
+                    )
+                    | Q(
+                        Q(
+                            parent__stockrecord__num_stock__gt=0,
+                            parent__product_class__track_stock=True,
+                        )
+                        | Q(parent__product_class__track_stock=False)
                     ),
                     id__in=products_id,
                     is_public=True,
-                    structure__in=[Product.ProductTypeChoice.standalone, Product.ProductTypeChoice.child]
+                    structure__in=[
+                        Product.ProductTypeChoice.standalone,
+                        Product.ProductTypeChoice.child,
+                    ],
                 )
             )
             product_map = {product.id: product for product in valid_products}
             if not product_map:
                 return BaseResponse(
-                    status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.FAILED.value,
                 )
             # Create or get OrderItem instances and perform count validation
             for item in items_to_add:
-                product_id = item['product_id']
-                count = item['count']
+                product_id = item["product_id"]
+                count = item["count"]
                 if product_id not in product_map:
                     continue  # Skip if product not valid
 
                 # Get or create OrderItem instance
-                order_item, _ = OrderItem.objects.get_or_create(order_id=order_id, product_id=product_id,
-                                                                defaults={'count': count})
+                order_item, _ = OrderItem.objects.get_or_create(
+                    order_id=order_id, product_id=product_id, defaults={"count": count}
+                )
 
                 order_item.count += count if not order_item.pk else 0
 
@@ -250,11 +270,14 @@ class OrderAddItemView(APIView):
 
                     if in_order_limit is None:
                         # Treat in_order_limit as infinity if it's None
-                        stock_limit = float('inf')
+                        stock_limit = float("inf")
                     else:
                         stock_limit = min(stock_limit, in_order_limit)
 
-                    if order_item.product.structure == Product.ProductTypeChoice.child or order_item.product.product_class.track_stock:
+                    if (
+                        order_item.product.structure == Product.ProductTypeChoice.child
+                        or order_item.product.product_class.track_stock
+                    ):
                         order_item.count = min(order_item.count, stock_limit)
 
                 order_item.save()
@@ -294,18 +317,18 @@ class OrderItemIncreaseView(APIView):
                     "product__product_class__track_stock",
                     "order__user",
                     "order__payment_status",
-                    "order__lock"
+                    "order__lock",
                 )
                 .get(
                     product_id=product_id,
                     order__user=self.request.user,
                     order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
-                    order__lock=False
+                    order__lock=False,
                 )
             )
             max_allowed_count = order_item.product.stockrecord.in_order_limit
             if max_allowed_count is None:
-                max_allowed_count = float('inf')
+                max_allowed_count = float("inf")
             if order_item.count >= max_allowed_count:
                 return BaseResponse(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -314,7 +337,7 @@ class OrderItemIncreaseView(APIView):
                     ),
                 )
             if (
-                    order_item.count >= order_item.product.stockrecord.num_stock
+                order_item.count >= order_item.product.stockrecord.num_stock
             ) and order_item.product.product_class.track_stock:
                 return BaseResponse(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -350,13 +373,13 @@ class OrderItemDecreaseView(APIView):
                     "product_id",
                     "order__user",
                     "order__payment_status",
-                    "order__lock"
+                    "order__lock",
                 )
                 .get(
                     product_id=product_id,
                     order__user=self.request.user,
                     order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
-                    order__lock=False
+                    order__lock=False,
                 )
             )
 
@@ -389,12 +412,16 @@ class OrderItemRemoveView(APIView):
             product_id = request.data.get("product_id")
 
             OrderItem.objects.select_related("order").only(
-                "id", "order__user", "order__payment_status", "order__lock", "product_id"
+                "id",
+                "order__user",
+                "order__payment_status",
+                "order__lock",
+                "product_id",
             ).get(
                 product_id=product_id,
                 order__user=self.request.user,
                 order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
-                order__lock=False
+                order__lock=False,
             ).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -414,11 +441,11 @@ class OrderItemClearView(APIView):
     def delete(self, request):
         try:
             order_id = request.data.get("order_id")
-            OrderItem.objects.select_related('order').filter(
+            OrderItem.objects.select_related("order").filter(
                 order__user=request.user,
                 order__id=order_id,
                 order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
-                order__lock=False
+                order__lock=False,
             ).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -436,8 +463,11 @@ class OrderShippingListAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = ShippingRate.objects.select_related('service', 'service__image').filter(is_public=True,
-                                                                                           service__is_public=True).all()
+        queryset = (
+            ShippingRate.objects.select_related("service", "service__image")
+            .filter(is_public=True, service__is_public=True)
+            .all()
+        )
         serializer = ShippingRateSerializer(queryset, many=True)
         return BaseResponse(
             data=serializer.data,
@@ -451,33 +481,44 @@ class OrderCouponUseAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        code = request.data.get('code')
+        code = request.data.get("code")
         user = request.user
         try:
             coupon = Coupon.objects.get(code=code)
         except Coupon.DoesNotExist:
             return BaseResponse(
                 status=status.HTTP_404_NOT_FOUND,
-                message=ResponseMessage.COUPON_NOT_VALID.value
+                message=ResponseMessage.COUPON_NOT_VALID.value,
             )
         try:
-            user_current_order = Order.objects.get(user=user, payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
+            user_current_order = Order.objects.get(
+                user=user, payment_status=Order.PaymentStatusChoice.OPEN_ORDER
+            )
             total_order = user_current_order.get_total_price()
-            valid, message = coupon.validate_coupon(user_id=user.id,
-                                                    order_total_price=total_order)
+            valid, message = coupon.validate_coupon(
+                user_id=user.id, order_total_price=total_order
+            )
             if valid:
-                new_price, dif_price, percentage_effect = coupon.calculate_discount(total_order)
+                new_price, dif_price, percentage_effect = coupon.calculate_discount(
+                    total_order
+                )
 
                 return BaseResponse(
-                    data={"discount_amount": dif_price, "percentage_effect": percentage_effect},
+                    data={
+                        "discount_amount": dif_price,
+                        "percentage_effect": percentage_effect,
+                    },
                     status=status.HTTP_204_NO_CONTENT,
-                    message=message
+                    message=message,
                 )
             else:
-                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                    message=message)
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST, message=message)
         except ObjectDoesNotExist:
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
         except Exception as e:
             print(f"apps.order.views.front line 467 : {e}")
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )

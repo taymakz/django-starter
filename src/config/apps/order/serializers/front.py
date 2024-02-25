@@ -12,7 +12,7 @@ class ShippingServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShippingService
-        fields = ('id', 'name', 'image', 'url')
+        fields = ("id", "name", "image", "url")
 
     def get_image(self, obj: ShippingService):
         if obj.image:
@@ -26,7 +26,13 @@ class ShippingRateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShippingRate
         fields = (
-            'id', 'service', 'area', 'price', 'all_area', 'free_shipping_threshold', 'pay_at_destination'
+            "id",
+            "service",
+            "area",
+            "price",
+            "all_area",
+            "free_shipping_threshold",
+            "pay_at_destination",
         )
 
 

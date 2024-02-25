@@ -125,9 +125,9 @@ class User(BaseModel, AbstractUser):
 
     def revoke_all_tokens(self) -> None:
         for token in OutstandingToken.objects.filter(user=self).exclude(
-                id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
-                    "token_id", flat=True
-                ),
+            id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
+                "token_id", flat=True
+            ),
         ):
             BlacklistedToken.objects.create(token=token)
 
@@ -242,8 +242,12 @@ class UserSearchHistory(BaseModel):
 
 
 class UserFavoriteProduct(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="favorites")
-    product = models.ForeignKey('catalog.Product', on_delete=models.CASCADE, related_name="favorites")
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="favorites"
+    )
+    product = models.ForeignKey(
+        "catalog.Product", on_delete=models.CASCADE, related_name="favorites"
+    )
 
     def __str__(self):
         return f"{self.user.username} {self.product.title_ir}"
@@ -253,9 +257,16 @@ class UserFavoriteProduct(BaseModel):
 
 
 class UserRecentVisitedProduct(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
-                             related_name="recent_products")
-    product = models.ForeignKey('catalog.Product', on_delete=models.CASCADE, related_name="recent_products")
+    user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="recent_products",
+    )
+    product = models.ForeignKey(
+        "catalog.Product", on_delete=models.CASCADE, related_name="recent_products"
+    )
 
     def __str__(self):
         return f"{self.user.username} {self.product.title_ir}"

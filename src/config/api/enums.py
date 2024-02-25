@@ -47,9 +47,7 @@ class ResponseMessage(Enum):
     ORDER_ITEM_CLEARED = "تمامی محصولات سبد خرید حذف شد"
     # Favorite
     PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY = "محصول به علاقه مندی‌ها اضافه شد"
-    PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY = (
-        "محصول از علاقه مندی‌ها حذف شد"
-    )
+    PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY = "محصول از علاقه مندی‌ها حذف شد"
 
     # User Panel Address
     USER_PANEL_ADDRESS_ADDED_SUCCESSFULLY = "آدرس جدید با موفقیت ثبت شد"
@@ -65,6 +63,8 @@ class ResponseMessage(Enum):
     # Payment
     PAYMENT_NOT_VALID_SELECTED_ADDRESS = "آدرس انتخاب شده نامعتبر می باشد"
     PAYMENT_NOT_VALID_SELECTED_SHIPPING = "شیوه ارسال انتخاب شده نامعتبر می باشد"
-    PAYMENT_NOT_VALID_SELECTED_SHIPPING_OR_ADDRESS = "شیوه ارسال و یا آدرس انتخاب شده نامعتبر می باشد"
+    PAYMENT_NOT_VALID_SELECTED_SHIPPING_OR_ADDRESS = (
+        "شیوه ارسال و یا آدرس انتخاب شده نامعتبر می باشد"
+    )
     PAYMENT_NOT_VALID_USED_COUPON = "کد تخفیف استفاده شده نامعتبر می باشد"
     PAYMENT_EMPTY_ORDER = "سبد خرید شما خالی می باشد"

@@ -13,7 +13,8 @@ from config.apps.catalog.models import (
     ProductImage,
     OptionGroup,
     ProductAttributeValue,
-    ProductPropertyValue, OptionGroupValue,
+    ProductPropertyValue,
+    OptionGroupValue,
 )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
@@ -43,7 +44,6 @@ class ProductSearchView(ListAPIView):
             "brand__title_ir",
             "brand__slug",
             "product_class__track_stock",
-
         )
         .select_related("brand", "stockrecord", "product_class")
         .prefetch_related("categories", "attributes__value_option", "images__image")
@@ -53,17 +53,22 @@ class ProductSearchView(ListAPIView):
                 Product.ProductTypeChoice.standalone,
                 Product.ProductTypeChoice.parent,
             ],
-        ).annotate(
+        )
+        .annotate(
             is_available=Case(
-                When(product_class__track_stock=True, then=Case(
-                    When(stockrecord__num_stock__gt=0, then=True),
-                    default=False,
-                    output_field=BooleanField()
-                )),
+                When(
+                    product_class__track_stock=True,
+                    then=Case(
+                        When(stockrecord__num_stock__gt=0, then=True),
+                        default=False,
+                        output_field=BooleanField(),
+                    ),
+                ),
                 default=True,
-                output_field=BooleanField()
+                output_field=BooleanField(),
             )
-        ).order_by('-is_available')
+        )
+        .order_by("-is_available")
         .annotate(
             primary_image_file=Subquery(
                 ProductImage.objects.select_related("image")
@@ -150,7 +155,7 @@ class ProductDetailView(APIView):
                 .filter(
                     is_public=True,
                 )
-                .annotate(primary_image_file=Subquery(primary_image_subquery))
+                .annotate(primary_image_file=Subquery(primary_image_subquery)),
             )
 
             prefetch_images = Prefetch(
@@ -169,10 +174,13 @@ class ProductDetailView(APIView):
                     "value_option",
                     "value_option__group",
                     "attribute__option_group",
-
                 )
                 .prefetch_related(
-                    Prefetch("value_multi_option", queryset=OptionGroupValue.objects.select_related('group').all())),
+                    Prefetch(
+                        "value_multi_option",
+                        queryset=OptionGroupValue.objects.select_related("group").all(),
+                    )
+                ),
             )
             prefetch_properties = Prefetch(
                 "properties",
@@ -200,7 +208,10 @@ class ProductDetailView(APIView):
                         "stockrecord", "brand", "brand__image", "product_class"
                     )
                     .prefetch_related(
-                        prefetch_recommended_products, prefetch_images, prefetch_attributes, prefetch_properties
+                        prefetch_recommended_products,
+                        prefetch_images,
+                        prefetch_attributes,
+                        prefetch_properties,
                     )
                 )
 

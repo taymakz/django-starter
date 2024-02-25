@@ -16,19 +16,33 @@ class Transaction(BaseModel):
         RETURN_FROM_BANK = "کاربر از درگاه برگشته"
         REDIRECT_TO_BANK = "کاربر به درگاه انتقال یافت"
 
-    user = models.ForeignKey('account.User', on_delete=models.SET_NULL, blank=True, null=True,
-                             related_name='transactions')
-    order = models.ForeignKey('order.Order', on_delete=models.SET_NULL, blank=True, null=True,
-                              related_name='transactions')
-    status = models.CharField(max_length=55, choices=TransactionStatusChoice, blank=True, null=True)
+    user = models.ForeignKey(
+        "account.User",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="transactions",
+    )
+    order = models.ForeignKey(
+        "order.Order",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="transactions",
+    )
+    status = models.CharField(
+        max_length=55, choices=TransactionStatusChoice, blank=True, null=True
+    )
     failed_reason = models.TextField(blank=True, null=True)
-    transaction_number = models.CharField(max_length=50, blank=True, null=True)  # شماره پیگیری
+    transaction_number = models.CharField(
+        max_length=50, blank=True, null=True
+    )  # شماره پیگیری
     slug = models.SlugField(max_length=6, unique=True, blank=True, null=True)
     ref_id = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        db_table = 'transaction'
-        ordering = ('-created_at',)
+        db_table = "transaction"
+        ordering = ("-created_at",)
 
     def __str__(self):
         return f"Transaction for Order - {self.get_status_display()} #{self.order_id}: {self.transaction_number}"
@@ -37,7 +51,9 @@ class Transaction(BaseModel):
 
         if self.transaction_number is None:
             transaction_number = randint(10000000, 99999999)
-            while Transaction.objects.filter(transaction_number=transaction_number).exists():
+            while Transaction.objects.filter(
+                transaction_number=transaction_number
+            ).exists():
                 transaction_number = randint(10000000, 99999999)
             self.transaction_number = transaction_number
         if self.slug is None:

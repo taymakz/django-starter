@@ -30,7 +30,6 @@ class UserAddressAPIView(APIView):
                 data=serializer.data,
                 status=status.HTTP_201_CREATED,
                 message=ResponseMessage.USER_PANEL_ADDRESS_ADDED_SUCCESSFULLY.value,
-
             )
         return BaseResponse(
             status=status.HTTP_400_BAD_REQUEST,
@@ -41,11 +40,13 @@ class UserAddressAPIView(APIView):
         try:
             serializer = UserAddressesSerializer(data=request.data)
             if serializer.is_valid():
-                address = UserAddresses.objects.get(id=request.data.get('id'), user=request.user)
+                address = UserAddresses.objects.get(
+                    id=request.data.get("id"), user=request.user
+                )
                 serializer.update(address, serializer.validated_data)
                 return BaseResponse(
                     status=status.HTTP_204_NO_CONTENT,
-                    message=ResponseMessage.USER_PANEL_ADDRESS_EDITED_SUCCESSFULLY.value
+                    message=ResponseMessage.USER_PANEL_ADDRESS_EDITED_SUCCESSFULLY.value,
                 )
             return BaseResponse(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except UserAddresses.DoesNotExist:
@@ -61,9 +62,10 @@ class UserAddressAPIView(APIView):
             address.delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
-                message=ResponseMessage.USER_PANEL_ADDRESS_REMOVED_SUCCESSFULLY.value
+                message=ResponseMessage.USER_PANEL_ADDRESS_REMOVED_SUCCESSFULLY.value,
             )
         except UserAddresses.DoesNotExist:
-            return BaseResponse(status=status.HTTP_404_NOT_FOUND,
-                                message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
-                                )
+            return BaseResponse(
+                status=status.HTTP_404_NOT_FOUND,
+                message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
+            )

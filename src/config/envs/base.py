@@ -56,7 +56,6 @@ EXTERNAL_APPS = [
     "imagekit",
     "treenode",
     "jalali_date",
-
 ]
 INTERNAL_APPS = [
     "config.api",

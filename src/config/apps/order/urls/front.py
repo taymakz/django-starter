@@ -22,9 +22,10 @@ urlpatterns = [
     ),
     path("item/remove/", front.OrderItemRemoveView.as_view(), name="order_item_remove"),
     path("item/clear/", front.OrderItemClearView.as_view(), name="order_item_clear"),
-
-    path("shipping/list/", front.OrderShippingListAPIView.as_view(), name="order_shipping_list"),
-
-    path('coupon/', front.OrderCouponUseAPIView.as_view(), name='order_coupon'),
-
+    path(
+        "shipping/list/",
+        front.OrderShippingListAPIView.as_view(),
+        name="order_shipping_list",
+    ),
+    path("coupon/", front.OrderCouponUseAPIView.as_view(), name="order_coupon"),
 ]

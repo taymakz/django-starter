@@ -11,7 +11,8 @@ from config.apps.catalog.models import (
     ProductAttribute,
     ProductImage,
     ProductProperty,
-    ProductPropertyValue, ProductClass,
+    ProductPropertyValue,
+    ProductClass,
 )
 from config.apps.inventory.serializers.front import (
     StockRecordCardSerializer,
@@ -288,7 +289,6 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "meta_description",
             "properties",
             "recommended_products",
-
         )
 
     def to_representation(self, instance):

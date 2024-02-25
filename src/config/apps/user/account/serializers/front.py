@@ -6,10 +6,7 @@ from ..models import User, UserSearchHistory
 class UserSearchHistorySerializer(serializers.ModelSerializer):
     class Meta:
         model = UserSearchHistory
-        fields = (
-            "id",
-            "search"
-        )
+        fields = ("id", "search")
 
 
 class UserSerializer(serializers.ModelSerializer):

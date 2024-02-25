@@ -2,8 +2,15 @@ from django import forms
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User, RecycleUser, UserPreviousDetailHistory, UserPasswordResetToken, UserSearchHistory, \
-    UserFavoriteProduct, UserRecentVisitedProduct
+from .models import (
+    User,
+    RecycleUser,
+    UserPreviousDetailHistory,
+    UserPasswordResetToken,
+    UserSearchHistory,
+    UserFavoriteProduct,
+    UserRecentVisitedProduct,
+)
 
 
 class UserForm(forms.ModelForm):
