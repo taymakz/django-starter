@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import OuterRef, Subquery, Window, F
+from django.db.models import OuterRef, Subquery, Window, F, Q
 from django.db.models.functions import RowNumber
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -72,6 +72,10 @@ class GetHomeDataView(APIView):
                     )
                     .select_related("brand", "stockrecord", "product_class")
                     .filter(
+                        Q(
+                            Q(stockrecord__num_stock__gt=0, product_class__track_stock=True) |
+                            Q(product_class__track_stock=False)
+                        ),
                         brand_id__in=brand_ids,
                         is_public=True,
                         structure__in=[

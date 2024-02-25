@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import Subquery, OuterRef, Q, Prefetch
+from django.db.models import Subquery, OuterRef, Q, Prefetch, BooleanField, Case, When
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
@@ -53,7 +53,17 @@ class ProductSearchView(ListAPIView):
                 Product.ProductTypeChoice.standalone,
                 Product.ProductTypeChoice.parent,
             ],
-        )
+        ).annotate(
+            is_available=Case(
+                When(product_class__track_stock=True, then=Case(
+                    When(stockrecord__num_stock__gt=0, then=True),
+                    default=False,
+                    output_field=BooleanField()
+                )),
+                default=True,
+                output_field=BooleanField()
+            )
+        ).order_by('-is_available')
         .annotate(
             primary_image_file=Subquery(
                 ProductImage.objects.select_related("image")

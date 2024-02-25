@@ -87,6 +87,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
     stockrecord = StockRecordCardSerializer()
     image = serializers.SerializerMethodField()
     track_stock = serializers.SerializerMethodField()
+    is_available_in_stock = serializers.SerializerMethodField()
     brand = ProductCardBrandSerializer()
 
     class Meta:
@@ -99,6 +100,7 @@ class ProductCardSerializer(serializers.ModelSerializer):
             "url",
             "stockrecord",
             "track_stock",
+            "is_available_in_stock",
             "brand",
         )
 
@@ -107,6 +109,9 @@ class ProductCardSerializer(serializers.ModelSerializer):
 
     def get_track_stock(self, obj: Product):
         return obj.product_class.track_stock
+
+    def get_is_available_in_stock(self, obj: Product):
+        return obj.stockrecord.num_stock > 0 if obj.product_class.track_stock else True
 
 
 class OptionGroupValueSerializer(serializers.ModelSerializer):
@@ -255,6 +260,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     product_class = ProductClassSerializer()
     attribute_values = ProductAttributeValueSerializer(many=True)
     stockrecord = StockRecordSerializer()
+    is_available_in_stock = serializers.SerializerMethodField()
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
     properties = ProductPropertyValueSerializer(many=True)
@@ -276,6 +282,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "short_slug",
             "description",
             "stockrecord",
+            "is_available_in_stock",
             "brand",
             "meta_title",
             "meta_description",
@@ -293,6 +300,9 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     def get_description(self, obj: Product):
         return markdown.markdown(obj.description) if obj.description else None
 
+    def get_is_available_in_stock(self, obj: Product):
+        return obj.stockrecord.num_stock > 0 if obj.product_class.track_stock else True
+
 
 # this is only For Schema
 class ProductDetailSchemaSerializer(serializers.ModelSerializer):
@@ -300,6 +310,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
     children = ProductDetailChildrenSerializer(many=True)
     attribute_values = ProductAttributeValueSerializer(many=True)
     stockrecord = StockRecordSerializer()
+    is_available_in_stock = serializers.SerializerMethodField()
     images = ProductImageSerializer(many=True)
     brand = BrandSerializer()
     url = serializers.CharField(source="get_absolute_url")
@@ -319,6 +330,7 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
             "title_en",
             "description",
             "stockrecord",
+            "is_available_in_stock",
             "brand",
             "meta_title",
             "meta_description",
@@ -330,3 +342,6 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
         if instance.structure != Product.ProductTypeChoice.child:
             data["attribute_values"] = None
         return data
+
+    def get_is_available_in_stock(self, obj: Product):
+        return obj.stockrecord.num_stock > 0 if obj.product_class.track_stock else True
