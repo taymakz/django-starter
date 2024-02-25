@@ -74,9 +74,9 @@ class ProductFilter(filters.FilterSet):
         color_ids = [int(x) for x in value.split(",")]
 
         return queryset.filter(
-            Q(productattributevalue__value_option_id__in=color_ids)
-            | Q(parent__productattributevalue__value_option_id__in=color_ids)
-            | Q(children__productattributevalue__value_option_id__in=color_ids),
+            Q(attribute_values__value_option_id__in=color_ids)
+            | Q(parent__attribute_values__value_option_id__in=color_ids)
+            | Q(children__attribute_values__value_option_id__in=color_ids),
             structure__in=[
                 Product.ProductTypeChoice.standalone,
                 Product.ProductTypeChoice.parent,
@@ -90,9 +90,9 @@ class ProductFilter(filters.FilterSet):
     def filter_size(self, queryset, name, value):
         size_ids = [int(x) for x in value.split(",")]
         return queryset.filter(
-            Q(productattributevalue__value_option_id__in=size_ids)
-            | Q(parent__productattributevalue__value_option_id__in=size_ids)
-            | Q(children__productattributevalue__value_option_id__in=size_ids),
+            Q(attribute_values__value_option_id__in=size_ids)
+            | Q(parent__attribute_values__value_option_id__in=size_ids)
+            | Q(children__attribute_values__value_option_id__in=size_ids),
             structure__in=[
                 Product.ProductTypeChoice.standalone,
                 Product.ProductTypeChoice.parent,

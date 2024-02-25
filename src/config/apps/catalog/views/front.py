@@ -33,16 +33,19 @@ class ProductSearchView(ListAPIView):
 
     queryset = (
         Product.objects.only(
+            "id",
             "title_ir",
             "title_en",
             "slug",
-            "upc",
+            "short_slug",
             "structure",
             "brand__title_en",
             "brand__title_ir",
             "brand__slug",
+            "product_class__track_stock",
+
         )
-        .select_related("brand", "stockrecord")
+        .select_related("brand", "stockrecord", "product_class")
         .prefetch_related("categories", "attributes__value_option", "images__image")
         .filter(
             is_public=True,
