@@ -1,5 +1,5 @@
 from django.core.cache import cache
-from django.db.models import OuterRef, Subquery, Window, F, Q
+from django.db.models import OuterRef, Subquery, Window, F, Q, Case, When, BooleanField
 from django.db.models.functions import RowNumber
 from rest_framework import status
 from rest_framework.permissions import AllowAny
@@ -85,6 +85,19 @@ class GetHomeDataView(APIView):
                             Product.ProductTypeChoice.standalone,
                             Product.ProductTypeChoice.parent,
                         ],
+                    ).annotate(
+                        is_available=Case(
+                            When(
+                                product_class__track_stock=True,
+                                then=Case(
+                                    When(stockrecord__num_stock__gt=0, then=True),
+                                    default=False,
+                                    output_field=BooleanField(),
+                                ),
+                            ),
+                            default=True,
+                            output_field=BooleanField(),
+                        )
                     )
                     .annotate(primary_image_file=Subquery(primary_image_subquery))
                     .annotate(
