@@ -222,6 +222,8 @@ class ProductPropertyValueSerializer(serializers.ModelSerializer):
 
 
 class ProductClassSerializer(serializers.ModelSerializer):
+    properties = ProductPropertySerializer(many=True)
+
     class Meta:
         model = ProductClass
         fields = (
@@ -230,6 +232,8 @@ class ProductClassSerializer(serializers.ModelSerializer):
             "title_en",
             "track_stock",
             "require_shipping",
+            "properties",
+
         )
 
 
