@@ -693,6 +693,22 @@ class UserFavoriteProductView(APIView):
             )
 
 
+class UserFavoriteProductClearView(APIView):
+
+    def delete(self, request):
+        try:
+            user = request.user
+            UserFavoriteProduct.objects.filter(user=user).delete()
+            return BaseResponse(
+                status=status.HTTP_204_NO_CONTENT,
+                message=ResponseMessage.PRODUCTS_CLEAR_FROM_FAVORITE_SUCCESSFULLY.value,
+            )
+        except Exception as e:
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+
 class UserSearchHistoryView(APIView):
     def post(self, request):
         search = request.data.get("search")

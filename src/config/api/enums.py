@@ -48,6 +48,7 @@ class ResponseMessage(Enum):
     # Favorite
     PRODUCT_ADDED_TO_FAVORITE_SUCCESSFULLY = "محصول به علاقه مندی‌ها اضافه شد"
     PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY = "محصول از علاقه مندی‌ها حذف شد"
+    PRODUCTS_CLEAR_FROM_FAVORITE_SUCCESSFULLY = "تمامی محصولات لیست علاقه مندی‌ حذف شد"
 
     # User Panel Address
     USER_PANEL_ADDRESS_ADDED_SUCCESSFULLY = "آدرس جدید با موفقیت ثبت شد"

@@ -50,6 +50,11 @@ urlpatterns = [
         name="user_favorite_product",
     ),
     path(
+        "favorite/clear/",
+        front.UserFavoriteProductClearView.as_view(),
+        name="user_favorite_product_clear",
+    ),
+    path(
         "recent-product/",
         front.UserRecentVisitedProductView.as_view(),
         name="user_recent_product",
