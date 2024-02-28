@@ -145,7 +145,7 @@ class OrderSerializer(serializers.Serializer):
 
 
 #  Profile Section Serializers
-class OrderProfileDashboardSerializer(serializers.ModelSerializer):
+class OrderProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = (
@@ -156,4 +156,87 @@ class OrderProfileDashboardSerializer(serializers.ModelSerializer):
             "final_paid_price",
             "ordered_at",
             "delivery_status_modified_at",
+        )
+
+
+class OrderItemProductDetailProfileSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    url = serializers.SerializerMethodField()
+    title_ir = serializers.SerializerMethodField()
+    attribute_values = ProductAttributeValueSerializer(many=True)
+
+    class Meta:
+        model = Product
+        fields = (
+            "id",
+            "title_ir",
+            "image",
+            "url",
+            "attribute_values",
+        )
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data["attribute_values"] = (
+            data["attribute_values"][0] if data["attribute_values"] else None
+        )
+        return data
+
+    def get_title_ir(self, obj: Product):
+        if obj.structure == Product.ProductTypeChoice.standalone:
+            return obj.title_ir
+        elif obj.structure == Product.ProductTypeChoice.child:
+            return obj.parent.title_ir
+
+    def get_image(self, obj: Product):
+        if obj.structure == Product.ProductTypeChoice.standalone:
+            return obj.images.first().image.file.name
+        elif obj.structure == Product.ProductTypeChoice.child:
+            return obj.parent.images.first().image.file.name
+
+    def get_url(self, obj: Product):
+        if obj.structure == Product.ProductTypeChoice.standalone:
+            return obj.get_absolute_url()
+        elif obj.structure == Product.ProductTypeChoice.child:
+            return obj.parent.get_absolute_url()
+
+
+class OrderItemDetailProfileSerializer(serializers.ModelSerializer):
+    product = OrderItemProductDetailProfileSerializer()
+
+    class Meta:
+        model = OrderItem
+        fields = (
+            "id",
+            "product",
+            "count",
+            "final_price",
+            "final_price_before_discount",
+            "final_discount",
+            "final_profit",
+        )
+
+
+class OrderDetailProfileSerializer(serializers.ModelSerializer):
+    items = OrderItemDetailProfileSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "items",
+            "payment_status",
+            "delivery_status",
+            "slug",
+            "ordered_at",
+            "delivery_status_modified_at",
+            "shipping_rate",
+            "address",
+            "tracking_code",
+            "final_paid_price",
+            "final_profit_price",
+            "final_total_items_final_price",
+            "final_total_items_before_discount_price",
+            "final_coupon_effect_price",
+            "final_shipping_effect_price",
         )

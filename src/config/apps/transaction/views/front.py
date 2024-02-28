@@ -89,7 +89,6 @@ class TransactionRequest(APIView):
                 )
             )
             current_order.lock = True
-
             current_order.save()
 
         except Order.DoesNotExist:
@@ -98,6 +97,7 @@ class TransactionRequest(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=ResponseMessage.FAILED.value,
             )
+
         if current_order.items.count() == 0:
             current_order.lock = False
             current_order.save()
@@ -106,6 +106,7 @@ class TransactionRequest(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
                 message=ResponseMessage.FAILED.value,
             )
+
         address = request.data.get("address", None)
         shipping = request.data.get("shipping", None)
 
@@ -222,12 +223,16 @@ class TransactionRequest(APIView):
         # Coupon Checked.
         # if order is free
         if order_total_price == 0:
+
             current_order.payment_status = Order.PaymentStatusChoice.PAID
             current_order.delivery_status = Order.DeliveryStatusChoice.PENDING
 
             current_order.final_paid_price = order_total_price
+
             current_order.final_profit_price = current_order.get_total_profit_price()
+
             current_order.final_total_items_final_price = current_order.get_total_items_final_price()
+
             current_order.final_total_items_before_discount_price = current_order.get_total_items_before_discount_price()
 
             current_order.final_coupon_effect_price = coupon_effect_dif_price
@@ -262,6 +267,7 @@ class TransactionRequest(APIView):
                 status=status.HTTP_200_OK,
                 message="در حال نهایی سازی سفارش",
             )
+
         if order_total_price < 1000:
             order_total_price = 1000
         transaction = Transaction.objects.create(
@@ -347,6 +353,18 @@ class TransactionRequest(APIView):
             current_order.save()
             return BaseResponse(
                 data={"code": "خطای اتصال"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.TIME_OUT.value,
+            )
+
+        except Exception as e:
+            print(e)
+            transaction.status = Transaction.TransactionStatusChoice.FAILED
+            transaction.failed_reason = e
+            transaction.save()
+            current_order.lock = False
+            current_order.save()
+            return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST,
                 message=ResponseMessage.TIME_OUT.value,
             )

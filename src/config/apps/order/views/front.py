@@ -15,7 +15,7 @@ from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
     OrderOpenSerializer,
-    ShippingRateSerializer, OrderProfileDashboardSerializer,
+    ShippingRateSerializer, OrderProfileSerializer, OrderDetailProfileSerializer,
 )
 
 
@@ -86,7 +86,7 @@ class OrderGetView(APIView):
                         "image__width",
                         "image__height",
                     )
-                    .select_related("image")
+                    .select_related("image", "product")
                     .prefetch_related("product__parent__images"),
                 )
                 prefetch_parent_images = Prefetch(
@@ -99,7 +99,7 @@ class OrderGetView(APIView):
                         "image__width",
                         "image__height",
                     )
-                    .select_related("image")
+                    .select_related("image", "product")
                     .prefetch_related("product__parent__images"),
                 )
 
@@ -525,20 +525,17 @@ class OrderCouponUseAPIView(APIView):
 
 
 # Profile Endpoints
-class OrderGetProfileDashboardDataView(APIView):
+class OrderGetProfileDataView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = OrderProfileDashboardSerializer
+    serializer_class = OrderProfileSerializer
 
     def get(self, request):
         try:
-            # [Order.DeliveryStatusChoice.SHIPPED,
-            #  Order.DeliveryStatusChoice.PROCESSING,
-            #  Order.DeliveryStatusChoice.PENDING]
             orders = (Order.objects.filter(
                 user=request.user,
                 payment_status=Order.PaymentStatusChoice.PAID).order_by('-ordered_at'))
-            data = OrderProfileDashboardSerializer(orders, many=True).data
+            data = OrderProfileSerializer(orders, many=True).data
             return BaseResponse(
                 data=data,
                 status=status.HTTP_200_OK,
@@ -546,6 +543,88 @@ class OrderGetProfileDashboardDataView(APIView):
             )
         except Exception as e:
             print(f"apps.order.views.front line 536 : {e}")
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+
+class OrderDetailProfileDataView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderDetailProfileSerializer
+
+    def get(self, request, slug=None, *args, **kwargs):
+        try:
+            prefetch_images = Prefetch(
+                "product__images",
+                queryset=ProductImage.objects.all()
+                .only(
+                    "id",
+                    "product_id",
+                    "image__file",
+                    "image__width",
+                    "image__height",
+                )
+                .select_related("image", "product")
+                .prefetch_related("product__parent__images"),
+            )
+            prefetch_parent_images = Prefetch(
+                "product__parent__images",
+                queryset=ProductImage.objects.all()
+                .only(
+                    "id",
+                    "product__parent_id",
+                    "image__file",
+                    "image__width",
+                    "image__height",
+                )
+                .select_related("image", "product")
+                .prefetch_related("product__parent__images"),
+            )
+
+            prefetch_attributes = Prefetch(
+                "product__attribute_values",
+                queryset=ProductAttributeValue.objects.all()
+                .select_related(
+                    "attribute",
+                    "attribute__option_group",
+                    "value_option",
+                    "value_option__group",
+                )
+                .prefetch_related(
+                    "value_multi_option", "value_multi_option__group"
+                ),
+            )
+
+            orders = Order.objects.prefetch_related(
+                Prefetch(
+                    "items",
+                    queryset=OrderItem.objects.prefetch_related(
+                        prefetch_images, prefetch_attributes, prefetch_parent_images
+                    )
+                    .select_related(
+                        "product",
+                        "product__stockrecord",
+                        "product__parent",
+                        "product__product_class",
+                        "product__parent__product_class",
+                    )
+                    .all(),
+                )
+            ).get(
+                user=request.user,
+                slug=slug,
+                payment_status=Order.PaymentStatusChoice.PAID,
+            )
+
+            data = self.serializer_class(orders).data
+            return BaseResponse(
+                data=data,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value,
+            )
+        except Exception as e:
+            print(f"apps.order.views.front line 630 : {e}")
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )

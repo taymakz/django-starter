@@ -195,6 +195,15 @@ class Order(BaseModel):
                 self.get_total_price() - self.final_coupon_effect_price
         ) + self.final_shipping_effect_price
 
+    def get_total_profit_price(self):  # before special price
+        return sum(item.get_total_profit() for item in self.items.all())
+
+    def get_total_items_final_price(self):  # before special price
+        return sum(item.get_total_price() for item in self.items.all())
+
+    def get_total_items_before_discount_price(self):  # before special price
+        return sum(item.get_total_price_before_discount() for item in self.items.all())
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
