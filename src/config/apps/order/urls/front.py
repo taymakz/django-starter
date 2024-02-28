@@ -28,4 +28,7 @@ urlpatterns = [
         name="order_shipping_list",
     ),
     path("coupon/", front.OrderCouponUseAPIView.as_view(), name="order_coupon"),
+
+    # Profile
+    path("profile/dashboard/", front.OrderGetProfileDashboardDataView.as_view(), name="order_profile_dashboard_data")
 ]

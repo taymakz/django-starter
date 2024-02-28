@@ -15,7 +15,7 @@ from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
     OrderOpenSerializer,
-    ShippingRateSerializer,
+    ShippingRateSerializer, OrderProfileDashboardSerializer,
 )
 
 
@@ -153,8 +153,8 @@ class OrderGetView(APIView):
                     order
                     for order in orders
                     if order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
-                    and order.repayment_expire_at
-                    and order.repayment_expire_at >= now()
+                       and order.repayment_expire_at
+                       and order.repayment_expire_at >= now()
                 ]
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
@@ -275,8 +275,8 @@ class OrderAddItemView(APIView):
                         stock_limit = min(stock_limit, in_order_limit)
 
                     if (
-                        order_item.product.structure == Product.ProductTypeChoice.child
-                        or order_item.product.product_class.track_stock
+                            order_item.product.structure == Product.ProductTypeChoice.child
+                            or order_item.product.product_class.track_stock
                     ):
                         order_item.count = min(order_item.count, stock_limit)
 
@@ -337,7 +337,7 @@ class OrderItemIncreaseView(APIView):
                     ),
                 )
             if (
-                order_item.count >= order_item.product.stockrecord.num_stock
+                    order_item.count >= order_item.product.stockrecord.num_stock
             ) and order_item.product.product_class.track_stock:
                 return BaseResponse(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -519,6 +519,33 @@ class OrderCouponUseAPIView(APIView):
             )
         except Exception as e:
             print(f"apps.order.views.front line 467 : {e}")
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+
+# Profile Endpoints
+class OrderGetProfileDashboardDataView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrderProfileDashboardSerializer
+
+    def get(self, request):
+        try:
+            # [Order.DeliveryStatusChoice.SHIPPED,
+            #  Order.DeliveryStatusChoice.PROCESSING,
+            #  Order.DeliveryStatusChoice.PENDING]
+            orders = (Order.objects.filter(
+                user=request.user,
+                payment_status=Order.PaymentStatusChoice.PAID).order_by('-ordered_at'))
+            data = OrderProfileDashboardSerializer(orders, many=True).data
+            return BaseResponse(
+                data=data,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value,
+            )
+        except Exception as e:
+            print(f"apps.order.views.front line 536 : {e}")
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )

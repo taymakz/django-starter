@@ -142,3 +142,18 @@ class OrderPendingSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.Serializer):
     open_order = OrderOpenSerializer()
     pending_orders = OrderPendingSerializer(many=True)
+
+
+#  Profile Section Serializers
+class OrderProfileDashboardSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = (
+            "id",
+            "payment_status",
+            "delivery_status",
+            "slug",
+            "final_paid_price",
+            "ordered_at",
+            "delivery_status_modified_at",
+        )
