@@ -614,7 +614,7 @@ class OrderDetailProfileDataView(APIView):
             ).get(
                 user=request.user,
                 slug=slug,
-                payment_status=Order.PaymentStatusChoice.PAID,
+                payment_status__in=[Order.PaymentStatusChoice.PAID, Order.PaymentStatusChoice.PENDING_PAYMENT],
             )
 
             data = self.serializer_class(orders).data
