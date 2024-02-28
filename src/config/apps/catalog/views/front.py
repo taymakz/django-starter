@@ -46,7 +46,7 @@ class ProductSearchView(ListAPIView):
             "product_class__track_stock",
         )
         .select_related("brand", "stockrecord", "product_class")
-        .prefetch_related("categories", "attributes__value_option", "images__image")
+        .prefetch_related("categories", "attributes__value_option")
         .filter(
             is_public=True,
             structure__in=[
