@@ -181,7 +181,8 @@ class TransactionRequest(APIView):
         current_order.shipping_rate = selected_shipping
         current_order.save()
         # Address and Shipping are Valid.
-        coupon_code = request.data.get("coupon_code", None)
+        coupon_code = request.data.get("coupon", None)
+
         order_total_price = order_total_price_before_coupon = (
             current_order.get_total_price()
         )
@@ -205,6 +206,7 @@ class TransactionRequest(APIView):
             is_valid_coupon, coupon_validate_message = used_coupon.validate_coupon(
                 user_id=user.id, order_total_price=order_total_price
             )
+
             if not is_valid_coupon:
                 current_order.lock = False
                 current_order.save()
@@ -218,7 +220,6 @@ class TransactionRequest(APIView):
             )
             order_total_price -= coupon_effect_dif_price
         # Coupon Checked.
-
         # if order is free
         if order_total_price == 0:
             current_order.payment_status = Order.PaymentStatusChoice.PAID
@@ -250,7 +251,7 @@ class TransactionRequest(APIView):
             return BaseResponse(
                 data={
                     "is_free": True,
-                    "redirect_to": f"{settings.FRONTEND_URL}/panel/orders/{current_order.slug}/",
+                    "redirect_to": f"/profile/order/{current_order.slug}/",
                 },
                 status=status.HTTP_200_OK,
                 message="در حال نهایی سازی سفارش",
@@ -299,7 +300,7 @@ class TransactionRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                            + str(response["Authority"]),
+                                                    + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -371,9 +372,9 @@ class TransactionRePaymentRequest(APIView):
                 message=ResponseMessage.FAILED.value,
             )
         if (
-            pending_order.items.count() == 0
-            or pending_order.shipping_rate is None
-            or pending_order.address is None
+                pending_order.items.count() == 0
+                or pending_order.shipping_rate is None
+                or pending_order.address is None
         ):
             pending_order.lock = False
             pending_order.save()
@@ -433,7 +434,7 @@ class TransactionRePaymentRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                            + str(response["Authority"]),
+                                                    + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
