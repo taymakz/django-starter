@@ -224,6 +224,12 @@ class TransactionRequest(APIView):
         if order_total_price == 0:
             current_order.payment_status = Order.PaymentStatusChoice.PAID
             current_order.delivery_status = Order.DeliveryStatusChoice.PENDING
+
+            current_order.final_paid_price = order_total_price
+            current_order.final_profit_price = current_order.get_total_profit_price()
+            current_order.final_total_items_final_price = current_order.get_total_items_final_price()
+            current_order.final_total_items_before_discount_price = current_order.get_total_items_before_discount_price()
+
             current_order.final_coupon_effect_price = coupon_effect_dif_price
             current_order.final_shipping_effect_price = order_shipping_effect_price
             current_order.ordered_at = now()
@@ -490,7 +496,7 @@ class TransactionVerify(APIView):
         transaction_number = request.GET.get("tn")
 
         try:
-            current_order = Order.objects.prefetch_related(
+            current_order: Order = Order.objects.prefetch_related(
                 Prefetch(
                     "items",
                     queryset=OrderItem.objects.select_related(
@@ -529,6 +535,11 @@ class TransactionVerify(APIView):
             response = response.json()
 
             if response["Status"] == 100:
+                current_order.final_paid_price = total_price
+                current_order.final_profit_price = current_order.get_total_profit_price()
+                current_order.final_total_items_final_price = current_order.get_total_items_final_price()
+                current_order.final_total_items_before_discount_price = current_order.get_total_items_before_discount_price()
+
                 current_order.payment_status = Order.PaymentStatusChoice.PAID
                 current_order.save()
                 current_order.ordered_at = now()
