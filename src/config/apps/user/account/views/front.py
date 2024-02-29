@@ -1,3 +1,4 @@
+from django.db.models import Case, When, BooleanField, Subquery, OuterRef
 from django.utils import timezone
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView
@@ -9,6 +10,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from config.api.enums import ResponseMessage
 from config.api.response import BaseResponse
+from config.apps.catalog.models import ProductImage, Product
+from config.apps.catalog.serializers.front import ProductCardSerializer
 from config.apps.messages.verification.models import (
     VerifyOTPService,
 )
@@ -28,8 +31,7 @@ from config.apps.user.account.serializers.front import (
     UserOTPAuthenticationCheckSerializer,
     UserForgotPasswordCheckSerializer,
     UserForgotPasswordOTPSerializer,
-    UserForgotPasswordResetSerializer,
-)
+    UserForgotPasswordResetSerializer, )
 from config.libs.validator.validators import validate_username, validate_password
 
 
@@ -606,18 +608,65 @@ class UserForgotPasswordResetView(APIView):
             )
 
 
-# class UserFavoriteProductListAPIView(ListAPIView):
-#     serializer_class = UserFavoriteProductSerializer
-#     permission_classes = [IsAuthenticated]
-#
-#     def get_queryset(self):
-#         user = self.request.user
-#         favorite_products = UserFavoriteProducts.objects.filter(user=user, is_delete=False).order_by('-id')
-#         products = [favorite.product for favorite in favorite_products]
-#         return products
-
-
 class UserFavoriteProductView(APIView):
+    def get(self, request, *args, **kwargs):
+
+        try:
+            user = request.user
+            user_favorites = UserFavoriteProduct.objects.only('product_id').select_related('product').filter(user=user)
+            user_favorites_products_id = [item.product_id for item in user_favorites]
+            products = (Product.objects.only(
+                "id",
+                "title_ir",
+                "title_en",
+                "slug",
+                "short_slug",
+                "structure",
+                "brand__title_en",
+                "brand__title_ir",
+                "brand__slug",
+                "product_class__track_stock",
+            )
+            .select_related("brand", "stockrecord", "product_class")
+            .filter(
+                id__in=user_favorites_products_id,
+                is_public=True,
+            )
+            .annotate(
+                is_available=Case(
+                    When(
+                        product_class__track_stock=True,
+                        then=Case(
+                            When(stockrecord__num_stock__gt=0, then=True),
+                            default=False,
+                            output_field=BooleanField(),
+                        ),
+                    ),
+                    default=True,
+                    output_field=BooleanField(),
+                )
+            )
+            .order_by("-is_available")
+            .annotate(
+                primary_image_file=Subquery(
+                    ProductImage.objects.select_related("image")
+                    .filter(product=OuterRef("pk"))
+                    .values("image__file")[:1]
+                )
+            ))
+
+            data = ProductCardSerializer(products, many=True).data
+            return BaseResponse(
+                data=data,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value
+            )
+
+        except Exception as e:
+            print(e)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
     def post(self, request):
 
@@ -677,7 +726,7 @@ class UserFavoriteProductView(APIView):
     def delete(self, request):
         try:
             user = request.user
-            product_id = request.data.get("id")
+            product_id = request.data.get("product_id")
             UserFavoriteProduct.objects.get(user=user, product_id=product_id).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
@@ -744,6 +793,66 @@ class UserSearchHistoryView(APIView):
 
 
 class UserRecentVisitedProductView(APIView):
+    def get(self, request, *args, **kwargs):
+
+        try:
+            user = request.user
+            user_recent = UserRecentVisitedProduct.objects.only('product_id').select_related('product').filter(
+                user=user)
+            user_recent_products_id = [item.product_id for item in user_recent]
+            products = (Product.objects.only(
+                "id",
+                "title_ir",
+                "title_en",
+                "slug",
+                "short_slug",
+                "structure",
+                "brand__title_en",
+                "brand__title_ir",
+                "brand__slug",
+                "product_class__track_stock",
+            )
+            .select_related("brand", "stockrecord", "product_class")
+            .filter(
+                id__in=user_recent_products_id,
+                is_public=True,
+            )
+            .annotate(
+                is_available=Case(
+                    When(
+                        product_class__track_stock=True,
+                        then=Case(
+                            When(stockrecord__num_stock__gt=0, then=True),
+                            default=False,
+                            output_field=BooleanField(),
+                        ),
+                    ),
+                    default=True,
+                    output_field=BooleanField(),
+                )
+            )
+            .order_by("-is_available")
+            .annotate(
+                primary_image_file=Subquery(
+                    ProductImage.objects.select_related("image")
+                    .filter(product=OuterRef("pk"))
+                    .values("image__file")[:1]
+                )
+            ))
+
+            data = ProductCardSerializer(products, many=True).data
+            return BaseResponse(
+                data=data,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value
+            )
+
+        except Exception as e:
+            print(e)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
     def post(self, request):
         product_ids = request.data.get("product_ids", [])
         if not product_ids:
@@ -757,6 +866,40 @@ class UserRecentVisitedProductView(APIView):
                 UserRecentVisitedProduct.objects.get_or_create(user=user, product_id=id)
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT, message=ResponseMessage.SUCCESS.value
+            )
+        except Exception as e:
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+    def delete(self, request):
+        try:
+            user = request.user
+            product_id = request.data.get("product_id")
+            UserRecentVisitedProduct.objects.get(user=user, product_id=product_id).delete()
+            return BaseResponse(
+                status=status.HTTP_204_NO_CONTENT,
+                message=ResponseMessage.SUCCESS.value,
+            )
+        except UserFavoriteProduct.DoesNotExist:
+            return BaseResponse(
+                status=status.HTTP_404_NOT_FOUND, message=ResponseMessage.FAILED.value
+            )
+        except Exception as e:
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+
+class UserRecentVisitedProductClearView(APIView):
+
+    def delete(self, request):
+        try:
+            user = request.user
+            UserRecentVisitedProduct.objects.filter(user=user).delete()
+            return BaseResponse(
+                status=status.HTTP_204_NO_CONTENT,
+                message=ResponseMessage.PRODUCTS_CLEAR_FROM_RECENT_SUCCESSFULLY.value,
             )
         except Exception as e:
             return BaseResponse(

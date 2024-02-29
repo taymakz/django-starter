@@ -50,7 +50,10 @@ class ResponseMessage(Enum):
     PRODUCT_REMOVED_FROM_FAVORITE_SUCCESSFULLY = "محصول از علاقه مندی‌ها حذف شد"
     PRODUCTS_CLEAR_FROM_FAVORITE_SUCCESSFULLY = "تمامی محصولات لیست علاقه مندی‌ حذف شد"
 
+    PRODUCTS_CLEAR_FROM_RECENT_SUCCESSFULLY = "تمامی محصولات لیست بازدید های اخیر‌ حذف شد"
+
     # User Panel Address
+    USER_PANEL_ADDRESS_TO_MUCH = "امکان ساخت بیش از 5 آدرس وجود ندارد"
     USER_PANEL_ADDRESS_ADDED_SUCCESSFULLY = "آدرس جدید با موفقیت ثبت شد"
     USER_PANEL_ADDRESS_REMOVED_SUCCESSFULLY = "آدرس مورد نظر حذف شد"
     USER_PANEL_ADDRESS_EDITED_SUCCESSFULLY = "آدرس با موفقیت ویرایش شد"

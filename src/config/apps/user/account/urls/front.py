@@ -60,6 +60,11 @@ urlpatterns = [
         name="user_recent_product",
     ),
     path(
+        "recent-product/clear/",
+        front.UserRecentVisitedProductClearView.as_view(),
+        name="user_recent_product_clear",
+    ),
+    path(
         "search-history/",
         front.UserSearchHistoryView.as_view(),
         name="user_search_history",

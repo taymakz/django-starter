@@ -23,6 +23,12 @@ class UserAddressAPIView(APIView):
         )
 
     def post(self, request):
+        UserAddresses.objects.filter(user=request.user).count()
+        if UserAddresses.objects.filter(user=request.user).count() >= 5:
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.USER_PANEL_ADDRESS_TO_MUCH.value,
+            )
         serializer = UserAddressesSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(user=request.user)
