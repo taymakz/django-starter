@@ -66,3 +66,14 @@ class UserForgotPasswordResetSerializer(serializers.Serializer):
     token = serializers.CharField()
     password = serializers.CharField()
     confirm_password = serializers.CharField()
+
+
+class UserEditProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'first_name',
+            'last_name',
+            'national_code',
+        )

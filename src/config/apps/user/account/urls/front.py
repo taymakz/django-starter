@@ -69,4 +69,14 @@ urlpatterns = [
         front.UserSearchHistoryView.as_view(),
         name="user_search_history",
     ),
+    # User Detail
+    path('edit/detail/', front.UserUpdateDetailView.as_view(), name='user_edit_detail'),
+    path('edit/password/', front.UserEditPassword.as_view(), name='user_edit_password'),
+
+    path('edit/phone/request/', front.UserEditPhoneRequestView.as_view(), name='user_edit_phone_request'),
+    path('edit/phone/confirm/', front.UserEditPhoneConfirmView.as_view(), name='user_edit_phone_confirm'),
+
+    path('edit/email/request/', front.UserEditEmailRequestView.as_view(), name='user_edit_email_request'),
+    path('edit/email/confirm/', front.UserEditEmailConfirmView.as_view(), name='user_edit_email_confirm'),
+
 ]

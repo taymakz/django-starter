@@ -125,9 +125,9 @@ class User(BaseModel, AbstractUser):
 
     def revoke_all_tokens(self) -> None:
         for token in OutstandingToken.objects.filter(user=self).exclude(
-            id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
-                "token_id", flat=True
-            ),
+                id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
+                    "token_id", flat=True
+                ),
         ):
             BlacklistedToken.objects.create(token=token)
 
@@ -194,8 +194,8 @@ class UserPreviousDetailHistory(BaseModel):
     field = models.CharField(
         choices=UserPreviousDetailHistoryFieldChoice, max_length=12
     )
-    old_value = models.CharField(max_length=255)
-    new_value = models.CharField(max_length=255)
+    old_value = models.CharField(max_length=255, blank=True, null=True)
+    new_value = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         db_table = "users_previous_detail_history"

@@ -1,7 +1,7 @@
 from django.db.models import Case, When, BooleanField, Subquery, OuterRef
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -31,8 +31,8 @@ from config.apps.user.account.serializers.front import (
     UserOTPAuthenticationCheckSerializer,
     UserForgotPasswordCheckSerializer,
     UserForgotPasswordOTPSerializer,
-    UserForgotPasswordResetSerializer, )
-from config.libs.validator.validators import validate_username, validate_password
+    UserForgotPasswordResetSerializer, UserEditProfileSerializer, )
+from config.libs.validator.validators import validate_username, validate_password, validate_phone, validate_email
 
 
 # User Get Current Detail , Required Data : Access Token
@@ -905,3 +905,239 @@ class UserRecentVisitedProductClearView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+# Profile
+
+
+class UserUpdateDetailView(UpdateAPIView):
+    serializer_class = UserEditProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, *args, **kwargs):
+        try:
+            user = self.request.user
+            serializer = self.serializer_class(user, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
+                                message=ResponseMessage.SUCCESS.value)
+        except Exception as e:
+            print(e)
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+
+class UserEditPhoneRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        phone = request.data.get('phone', None).lower()
+        otp_usage = request.data.get('otp_usage', None)
+
+        if not phone or not otp_usage:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        if validate_phone(phone):
+            phone = User.get_formatted_phone(phone)
+
+            if User.objects.filter(phone=phone).exists():
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                    message=ResponseMessage.USER_PANEL_PHONE_ALREADY_EXIST.value)
+            # Check for the latest OTP service record for phone authentication
+            otp_service = (
+                VerifyOTPService.objects.filter(
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
+                    to=phone,
+                    usage=otp_usage,
+                )
+                .order_by("-id")
+                .first()
+            )
+            if otp_service:
+                if otp_service.is_expired():
+                    otp_service.delete()
+                    new_otp_service = VerifyOTPService.objects.create(
+                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
+                        to=phone,
+                        usage=otp_usage)
+                    new_otp_service.send_otp()
+
+                    return BaseResponse(status=status.HTTP_200_OK,
+                                        message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+                else:
+                    return BaseResponse(status=status.HTTP_200_OK,
+                                        message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+            else:
+                new_otp_service = VerifyOTPService.objects.create(
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE, to=phone, usage=otp_usage)
+
+                new_otp_service.send_otp()
+                return BaseResponse(status=status.HTTP_200_OK,
+                                    message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+        else:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.NOT_VALID_PHONE.value)
+
+
+class UserEditPhoneConfirmView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        phone = request.data.get('phone', None).lower()
+        otp = request.data.get('otp', None)
+        user = self.request.user
+
+        phone = User.get_formatted_phone(phone)
+
+        if not phone or not otp or (phone == user.phone):
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        otp_service = VerifyOTPService.objects.filter(type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE, to=phone,
+                                                      code=otp,
+                                                      usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY).order_by(
+            '-id').first()
+
+        if not otp_service or otp_service.is_expired():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.AUTH_WRONG_OTP.value)
+
+        otp_service.delete()
+        user.phone = phone
+        user.revoke_all_tokens()
+        user.save()
+
+        # Generate JWT token for the user
+        refresh_token = RefreshToken.for_user(user)
+        access_token = refresh_token.access_token
+
+        user_token = {
+            'access': str(access_token),
+            'refresh': str(refresh_token),
+        }
+        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
+                            message=ResponseMessage.SUCCESS.value)
+
+
+class UserEditEmailRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        email = request.data.get('email', None).lower()
+        otp_usage = request.data.get('otp_usage', None)
+        if not email or not otp_usage:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        if validate_email(email):
+            if User.objects.filter(email=email).exists():
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                    message=ResponseMessage.USER_PANEL_EMAIL_ALREADY_EXIST.value)
+            # Check for the latest OTP service record for phone authentication
+            otp_service = (
+                VerifyOTPService.objects.filter(
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
+                    to=email,
+                    usage=otp_usage,
+                )
+                .order_by("-id")
+                .first()
+            )
+            if otp_service:
+                if otp_service.is_expired():
+                    otp_service.delete()
+                    new_otp_service = VerifyOTPService.objects.create(
+                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email, usage=otp_usage)
+                    new_otp_service.send_otp()
+
+                    return BaseResponse(status=status.HTTP_200_OK,
+                                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+                else:
+                    return BaseResponse(status=status.HTTP_200_OK,
+                                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+            else:
+                new_otp_service = VerifyOTPService.objects.create(
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email, usage=otp_usage)
+
+                new_otp_service.send_otp()
+                return BaseResponse(status=status.HTTP_200_OK,
+                                    message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+        else:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.NOT_VALID_EMAIL.value)
+
+
+class UserEditEmailConfirmView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        email = request.data.get('email', None).lower()
+        otp = request.data.get('otp', None)
+        user = self.request.user
+
+        if not email or not otp or (email == user.email):
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.FAILED.value)
+
+        otp_service = VerifyOTPService.objects.filter(type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email,
+                                                      code=otp,
+                                                      usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY).order_by(
+            '-id').first()
+
+        if not otp_service or otp_service.is_expired():
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.AUTH_WRONG_OTP.value)
+
+        otp_service.delete()
+        user.email = email
+        user.revoke_all_tokens()
+        user.save()
+
+        # Generate JWT token for the user
+        refresh_token = RefreshToken.for_user(user)
+        access_token = refresh_token.access_token
+
+        user_token = {
+            'access': str(access_token),
+            'refresh': str(refresh_token),
+        }
+        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
+                            message=ResponseMessage.SUCCESS.value)
+
+
+class UserEditPassword(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def put(self, request, format=None):
+        current_password = request.data.get('current_password')
+        password = request.data.get('password')
+        confirm_password = request.data.get('confirm_password')
+        user = self.request.user
+
+        if user.has_usable_password() and not user.check_password(current_password):
+            return BaseResponse(data={'error_input_name': 'current_password'}, status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.USER_PANEL_CURRENT_PASSWORD_WRONG.value)
+        is_valid, message = validate_password(password)
+        if not is_valid:
+            return BaseResponse(data={'error_input_name': 'password'}, status=status.HTTP_400_BAD_REQUEST,
+                                message=message)
+        if password != confirm_password:
+            return BaseResponse(data={'error_input_name': 'confirm_password'}, status=status.HTTP_400_BAD_REQUEST,
+                                message=ResponseMessage.PASSWORD_CONFIRM_MISMATCH.value)
+
+        user.set_password(password)
+        user.revoke_all_tokens()
+        user.save()
+
+        # Generate JWT token for the user
+        refresh_token = RefreshToken.for_user(user)
+        access_token = refresh_token.access_token
+
+        user_token = {
+            'access': str(access_token),
+            'refresh': str(refresh_token),
+        }
+        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
+                            message=ResponseMessage.RESET_PASSWORD_SUCCESSFULLY.value)
