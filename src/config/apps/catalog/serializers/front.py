@@ -362,7 +362,6 @@ class ProductCommentListSerializer(serializers.ModelSerializer):
             "title",
             "comment",
             "suggestion",
-            "accept_by_admin",
             "is_buyer",
         )
 
