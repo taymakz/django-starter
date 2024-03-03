@@ -1,9 +1,19 @@
 from django.core.cache import cache
-from django.db.models import Subquery, OuterRef, Q, Prefetch, BooleanField, Case, When
+from django.db.models import (
+    Subquery,
+    OuterRef,
+    Q,
+    Prefetch,
+    BooleanField,
+    Case,
+    When,
+    Exists,
+)
 from rest_framework import status
 from rest_framework.generics import ListAPIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
+from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from config.api.enums import ResponseMessage
 from config.api.response import PaginationApiResponse, BaseResponse
@@ -15,6 +25,7 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductPropertyValue,
     OptionGroupValue,
+    ProductComment,
 )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
@@ -22,7 +33,10 @@ from config.apps.catalog.serializers.front import (
     ProductDetailSerializer,
     ProductDetailSchemaSerializer,
     ProductDetailChildrenSerializer,
+    ProductCommentListSerializer,
+    ProductCommentCreateSerializer,
 )
+from config.apps.order.models import OrderItem, Order
 
 
 class ProductSearchView(ListAPIView):
@@ -279,3 +293,64 @@ class ProductDetailView(APIView):
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )
+
+
+class ProductCommentListAPIView(ListAPIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    pagination_class = PaginationApiResponse
+    serializer_class = ProductCommentListSerializer
+    queryset = ProductComment.objects.filter(accept_by_admin=True).annotate(
+        is_buyer=Case(
+            When(user=None, then=False),  # If user is None, they cannot be a buyer
+            default=Exists(
+                OrderItem.objects.only(
+                    "product_id",
+                    "product__parent_id",
+                    "order__user_id",
+                    "order__payment_status",
+                )
+                .select_related("product")
+                .filter(
+                    Q(product_id=OuterRef("product"))
+                    | Q(product__parent_id=OuterRef("product")),
+                    order__user_id=OuterRef("user"),
+                    order__payment_status=Order.PaymentStatusChoice.PAID,
+                )
+            ),
+            output_field=BooleanField(),
+        )
+    )
+
+    def list(self, request, *args, **kwargs):
+        product_id = request.data.get("product_id", None)
+        if not product_id:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+        # Filter the queryset using the provided product_id
+        queryset = super().get_queryset()
+
+        # Proceed with standard list view behavior
+        page = self.paginate_queryset(queryset)
+
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+
+class ProductCommentCreateAPIView(ListAPIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+    serializer_class = ProductCommentCreateSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return BaseResponse(
+                data=serializer.data,
+                status=status.HTTP_201_CREATED,
+                message=ResponseMessage.SUCCESS.value,
+            )
+        return BaseResponse(
+            status=status.HTTP_400_BAD_REQUEST,
+            message=serializer.errors,
+        )

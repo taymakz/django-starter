@@ -125,9 +125,9 @@ class User(BaseModel, AbstractUser):
 
     def revoke_all_tokens(self) -> None:
         for token in OutstandingToken.objects.filter(user=self).exclude(
-                id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
-                    "token_id", flat=True
-                ),
+            id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
+                "token_id", flat=True
+            ),
         ):
             BlacklistedToken.objects.create(token=token)
 

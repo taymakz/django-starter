@@ -15,7 +15,9 @@ from config.apps.order.serializers.front import (
     OrderSerializer,
     OrderPendingSerializer,
     OrderOpenSerializer,
-    ShippingRateSerializer, OrderProfileSerializer, OrderDetailProfileSerializer,
+    ShippingRateSerializer,
+    OrderProfileSerializer,
+    OrderDetailProfileSerializer,
 )
 
 
@@ -153,8 +155,8 @@ class OrderGetView(APIView):
                     order
                     for order in orders
                     if order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
-                       and order.repayment_expire_at
-                       and order.repayment_expire_at >= now()
+                    and order.repayment_expire_at
+                    and order.repayment_expire_at >= now()
                 ]
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
@@ -275,8 +277,8 @@ class OrderAddItemView(APIView):
                         stock_limit = min(stock_limit, in_order_limit)
 
                     if (
-                            order_item.product.structure == Product.ProductTypeChoice.child
-                            or order_item.product.product_class.track_stock
+                        order_item.product.structure == Product.ProductTypeChoice.child
+                        or order_item.product.product_class.track_stock
                     ):
                         order_item.count = min(order_item.count, stock_limit)
 
@@ -337,7 +339,7 @@ class OrderItemIncreaseView(APIView):
                     ),
                 )
             if (
-                    order_item.count >= order_item.product.stockrecord.num_stock
+                order_item.count >= order_item.product.stockrecord.num_stock
             ) and order_item.product.product_class.track_stock:
                 return BaseResponse(
                     status=status.HTTP_400_BAD_REQUEST,
@@ -532,9 +534,9 @@ class OrderGetProfileDataView(APIView):
 
     def get(self, request):
         try:
-            orders = (Order.objects.filter(
-                user=request.user,
-                payment_status=Order.PaymentStatusChoice.PAID).order_by('-ordered_at'))
+            orders = Order.objects.filter(
+                user=request.user, payment_status=Order.PaymentStatusChoice.PAID
+            ).order_by("-ordered_at")
             data = OrderProfileSerializer(orders, many=True).data
             return BaseResponse(
                 data=data,
@@ -591,9 +593,7 @@ class OrderDetailProfileDataView(APIView):
                     "value_option",
                     "value_option__group",
                 )
-                .prefetch_related(
-                    "value_multi_option", "value_multi_option__group"
-                ),
+                .prefetch_related("value_multi_option", "value_multi_option__group"),
             )
 
             orders = Order.objects.prefetch_related(
@@ -614,7 +614,10 @@ class OrderDetailProfileDataView(APIView):
             ).get(
                 user=request.user,
                 slug=slug,
-                payment_status__in=[Order.PaymentStatusChoice.PAID, Order.PaymentStatusChoice.PENDING_PAYMENT],
+                payment_status__in=[
+                    Order.PaymentStatusChoice.PAID,
+                    Order.PaymentStatusChoice.PENDING_PAYMENT,
+                ],
             )
 
             data = self.serializer_class(orders).data

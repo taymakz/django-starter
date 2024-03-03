@@ -14,4 +14,14 @@ urlpatterns = [
         front.ProductDetailView.as_view(),
         name="product-detail",
     ),
+    path(
+        "product/comment/list/",
+        front.ProductCommentListAPIView.as_view(),
+        name="product-comment-list",
+    ),
+    path(
+        "product/comment/create/",
+        front.ProductCommentCreateAPIView.as_view(),
+        name="product-comment-create",
+    ),
 ]

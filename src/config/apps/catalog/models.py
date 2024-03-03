@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.db import models
 from treenode.models import TreeNodeModel
 
+from config.apps.order.models import OrderItem, Order
 from config.libs.db.fields import UpperCaseCharField
 from config.libs.db.models import BaseModel
 
@@ -409,3 +410,27 @@ class ProductPropertyValue(models.Model):
 
     def __str__(self):
         return f"{self.property.name} : {self.value}"
+
+
+class ProductComment(BaseModel):
+    class ProductCommentSuggestChoice(models.TextChoices):
+        SUGGEST = "پیشنهاد میکنم"
+        NOT_SUGGEST = "پیشنهاد نمی کنم"
+
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="comments"
+    )
+    user = models.ForeignKey(
+        "account.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="comments",
+    )
+    title = models.CharField(max_length=65)
+    comment = models.CharField(max_length=165)
+    suggestion = models.CharField(max_length=15, choices=ProductCommentSuggestChoice)
+    accept_by_admin = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.user} on {self.product.title_en} suggest : {self.get_suggestion_display()} : {self.comment[:50]}"

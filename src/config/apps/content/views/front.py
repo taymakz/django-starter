@@ -85,7 +85,8 @@ class GetHomeDataView(APIView):
                             Product.ProductTypeChoice.standalone,
                             Product.ProductTypeChoice.parent,
                         ],
-                    ).annotate(
+                    )
+                    .annotate(
                         is_available=Case(
                             When(
                                 product_class__track_stock=True,

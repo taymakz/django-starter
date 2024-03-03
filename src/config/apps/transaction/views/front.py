@@ -231,9 +231,13 @@ class TransactionRequest(APIView):
 
             current_order.final_profit_price = current_order.get_total_profit_price()
 
-            current_order.final_total_items_final_price = current_order.get_total_items_final_price()
+            current_order.final_total_items_final_price = (
+                current_order.get_total_items_final_price()
+            )
 
-            current_order.final_total_items_before_discount_price = current_order.get_total_items_before_discount_price()
+            current_order.final_total_items_before_discount_price = (
+                current_order.get_total_items_before_discount_price()
+            )
 
             current_order.final_coupon_effect_price = coupon_effect_dif_price
             current_order.final_shipping_effect_price = order_shipping_effect_price
@@ -312,7 +316,7 @@ class TransactionRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                                                    + str(response["Authority"]),
+                            + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -396,9 +400,9 @@ class TransactionRePaymentRequest(APIView):
                 message=ResponseMessage.FAILED.value,
             )
         if (
-                pending_order.items.count() == 0
-                or pending_order.shipping_rate is None
-                or pending_order.address is None
+            pending_order.items.count() == 0
+            or pending_order.shipping_rate is None
+            or pending_order.address is None
         ):
             pending_order.lock = False
             pending_order.save()
@@ -458,7 +462,7 @@ class TransactionRePaymentRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                                                    + str(response["Authority"]),
+                            + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -554,9 +558,15 @@ class TransactionVerify(APIView):
 
             if response["Status"] == 100:
                 current_order.final_paid_price = total_price
-                current_order.final_profit_price = current_order.get_total_profit_price()
-                current_order.final_total_items_final_price = current_order.get_total_items_final_price()
-                current_order.final_total_items_before_discount_price = current_order.get_total_items_before_discount_price()
+                current_order.final_profit_price = (
+                    current_order.get_total_profit_price()
+                )
+                current_order.final_total_items_final_price = (
+                    current_order.get_total_items_final_price()
+                )
+                current_order.final_total_items_before_discount_price = (
+                    current_order.get_total_items_before_discount_price()
+                )
 
                 current_order.payment_status = Order.PaymentStatusChoice.PAID
                 current_order.save()

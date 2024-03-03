@@ -17,6 +17,7 @@ from config.apps.catalog.models import (
     OptionGroup,
     ProductProperty,
     ProductPropertyValue,
+    ProductComment,
 )
 from config.apps.inventory.models import StockRecord
 
@@ -61,6 +62,11 @@ class BrandAdmin(admin.ModelAdmin):
             )
         else:
             return ""
+
+
+@admin.register(ProductComment)
+class ProductCommentAdmin(admin.ModelAdmin):
+    pass
 
 
 @admin.register(ProductProperty)

@@ -31,8 +31,15 @@ from config.apps.user.account.serializers.front import (
     UserOTPAuthenticationCheckSerializer,
     UserForgotPasswordCheckSerializer,
     UserForgotPasswordOTPSerializer,
-    UserForgotPasswordResetSerializer, UserEditProfileSerializer, )
-from config.libs.validator.validators import validate_username, validate_password, validate_phone, validate_email
+    UserForgotPasswordResetSerializer,
+    UserEditProfileSerializer,
+)
+from config.libs.validator.validators import (
+    validate_username,
+    validate_password,
+    validate_phone,
+    validate_email,
+)
 
 
 # User Get Current Detail , Required Data : Access Token
@@ -613,53 +620,59 @@ class UserFavoriteProductView(APIView):
 
         try:
             user = request.user
-            user_favorites = UserFavoriteProduct.objects.only('product_id').select_related('product').filter(user=user)
+            user_favorites = (
+                UserFavoriteProduct.objects.only("product_id")
+                .select_related("product")
+                .filter(user=user)
+            )
             user_favorites_products_id = [item.product_id for item in user_favorites]
-            products = (Product.objects.only(
-                "id",
-                "title_ir",
-                "title_en",
-                "slug",
-                "short_slug",
-                "structure",
-                "brand__title_en",
-                "brand__title_ir",
-                "brand__slug",
-                "product_class__track_stock",
-            )
-            .select_related("brand", "stockrecord", "product_class")
-            .filter(
-                id__in=user_favorites_products_id,
-                is_public=True,
-            )
-            .annotate(
-                is_available=Case(
-                    When(
-                        product_class__track_stock=True,
-                        then=Case(
-                            When(stockrecord__num_stock__gt=0, then=True),
-                            default=False,
-                            output_field=BooleanField(),
+            products = (
+                Product.objects.only(
+                    "id",
+                    "title_ir",
+                    "title_en",
+                    "slug",
+                    "short_slug",
+                    "structure",
+                    "brand__title_en",
+                    "brand__title_ir",
+                    "brand__slug",
+                    "product_class__track_stock",
+                )
+                .select_related("brand", "stockrecord", "product_class")
+                .filter(
+                    id__in=user_favorites_products_id,
+                    is_public=True,
+                )
+                .annotate(
+                    is_available=Case(
+                        When(
+                            product_class__track_stock=True,
+                            then=Case(
+                                When(stockrecord__num_stock__gt=0, then=True),
+                                default=False,
+                                output_field=BooleanField(),
+                            ),
                         ),
-                    ),
-                    default=True,
-                    output_field=BooleanField(),
+                        default=True,
+                        output_field=BooleanField(),
+                    )
+                )
+                .order_by("-is_available")
+                .annotate(
+                    primary_image_file=Subquery(
+                        ProductImage.objects.select_related("image")
+                        .filter(product=OuterRef("pk"))
+                        .values("image__file")[:1]
+                    )
                 )
             )
-            .order_by("-is_available")
-            .annotate(
-                primary_image_file=Subquery(
-                    ProductImage.objects.select_related("image")
-                    .filter(product=OuterRef("pk"))
-                    .values("image__file")[:1]
-                )
-            ))
 
             data = ProductCardSerializer(products, many=True).data
             return BaseResponse(
                 data=data,
                 status=status.HTTP_200_OK,
-                message=ResponseMessage.SUCCESS.value
+                message=ResponseMessage.SUCCESS.value,
             )
 
         except Exception as e:
@@ -797,54 +810,59 @@ class UserRecentVisitedProductView(APIView):
 
         try:
             user = request.user
-            user_recent = UserRecentVisitedProduct.objects.only('product_id').select_related('product').filter(
-                user=user)
+            user_recent = (
+                UserRecentVisitedProduct.objects.only("product_id")
+                .select_related("product")
+                .filter(user=user)
+            )
             user_recent_products_id = [item.product_id for item in user_recent]
-            products = (Product.objects.only(
-                "id",
-                "title_ir",
-                "title_en",
-                "slug",
-                "short_slug",
-                "structure",
-                "brand__title_en",
-                "brand__title_ir",
-                "brand__slug",
-                "product_class__track_stock",
-            )
-            .select_related("brand", "stockrecord", "product_class")
-            .filter(
-                id__in=user_recent_products_id,
-                is_public=True,
-            )
-            .annotate(
-                is_available=Case(
-                    When(
-                        product_class__track_stock=True,
-                        then=Case(
-                            When(stockrecord__num_stock__gt=0, then=True),
-                            default=False,
-                            output_field=BooleanField(),
+            products = (
+                Product.objects.only(
+                    "id",
+                    "title_ir",
+                    "title_en",
+                    "slug",
+                    "short_slug",
+                    "structure",
+                    "brand__title_en",
+                    "brand__title_ir",
+                    "brand__slug",
+                    "product_class__track_stock",
+                )
+                .select_related("brand", "stockrecord", "product_class")
+                .filter(
+                    id__in=user_recent_products_id,
+                    is_public=True,
+                )
+                .annotate(
+                    is_available=Case(
+                        When(
+                            product_class__track_stock=True,
+                            then=Case(
+                                When(stockrecord__num_stock__gt=0, then=True),
+                                default=False,
+                                output_field=BooleanField(),
+                            ),
                         ),
-                    ),
-                    default=True,
-                    output_field=BooleanField(),
+                        default=True,
+                        output_field=BooleanField(),
+                    )
+                )
+                .order_by("-is_available")
+                .annotate(
+                    primary_image_file=Subquery(
+                        ProductImage.objects.select_related("image")
+                        .filter(product=OuterRef("pk"))
+                        .values("image__file")[:1]
+                    )
                 )
             )
-            .order_by("-is_available")
-            .annotate(
-                primary_image_file=Subquery(
-                    ProductImage.objects.select_related("image")
-                    .filter(product=OuterRef("pk"))
-                    .values("image__file")[:1]
-                )
-            ))
 
             data = ProductCardSerializer(products, many=True).data
             return BaseResponse(
                 data=data,
                 status=status.HTTP_200_OK,
-                message=ResponseMessage.SUCCESS.value
+                message=ResponseMessage.SUCCESS.value,
             )
 
         except Exception as e:
@@ -876,7 +894,9 @@ class UserRecentVisitedProductView(APIView):
         try:
             user = request.user
             product_id = request.data.get("product_id")
-            UserRecentVisitedProduct.objects.get(user=user, product_id=product_id).delete()
+            UserRecentVisitedProduct.objects.get(
+                user=user, product_id=product_id
+            ).delete()
             return BaseResponse(
                 status=status.HTTP_204_NO_CONTENT,
                 message=ResponseMessage.SUCCESS.value,
@@ -920,31 +940,36 @@ class UserUpdateDetailView(UpdateAPIView):
             serializer = self.serializer_class(user, data=request.data, partial=True)
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return BaseResponse(status=status.HTTP_204_NO_CONTENT,
-                                message=ResponseMessage.SUCCESS.value)
+            return BaseResponse(
+                status=status.HTTP_204_NO_CONTENT, message=ResponseMessage.SUCCESS.value
+            )
         except Exception as e:
             print(e)
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
 
 class UserEditPhoneRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        phone = request.data.get('phone', None).lower()
-        otp_usage = request.data.get('otp_usage', None)
+        phone = request.data.get("phone", None).lower()
+        otp_usage = request.data.get("otp_usage", None)
 
         if not phone or not otp_usage:
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
         if validate_phone(phone):
             phone = User.get_formatted_phone(phone)
 
             if User.objects.filter(phone=phone).exists():
-                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                    message=ResponseMessage.USER_PANEL_PHONE_ALREADY_EXIST.value)
+                return BaseResponse(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.USER_PANEL_PHONE_ALREADY_EXIST.value,
+                )
             # Check for the latest OTP service record for phone authentication
             otp_service = (
                 VerifyOTPService.objects.filter(
@@ -961,48 +986,73 @@ class UserEditPhoneRequestView(APIView):
                     new_otp_service = VerifyOTPService.objects.create(
                         type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
                         to=phone,
-                        usage=otp_usage)
+                        usage=otp_usage,
+                    )
                     new_otp_service.send_otp()
 
-                    return BaseResponse(status=status.HTTP_200_OK,
-                                        message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+                    return BaseResponse(
+                        status=status.HTTP_200_OK,
+                        message=ResponseMessage.PHONE_OTP_SENT.value.format(
+                            username=phone
+                        ),
+                    )
                 else:
-                    return BaseResponse(status=status.HTTP_200_OK,
-                                        message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+                    return BaseResponse(
+                        status=status.HTTP_200_OK,
+                        message=ResponseMessage.PHONE_OTP_SENT.value.format(
+                            username=phone
+                        ),
+                    )
             else:
                 new_otp_service = VerifyOTPService.objects.create(
-                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE, to=phone, usage=otp_usage)
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
+                    to=phone,
+                    usage=otp_usage,
+                )
 
                 new_otp_service.send_otp()
-                return BaseResponse(status=status.HTTP_200_OK,
-                                    message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone))
+                return BaseResponse(
+                    status=status.HTTP_200_OK,
+                    message=ResponseMessage.PHONE_OTP_SENT.value.format(username=phone),
+                )
         else:
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.NOT_VALID_PHONE.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.NOT_VALID_PHONE.value,
+            )
 
 
 class UserEditPhoneConfirmView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        phone = request.data.get('phone', None).lower()
-        otp = request.data.get('otp', None)
+        phone = request.data.get("phone", None).lower()
+        otp = request.data.get("otp", None)
         user = self.request.user
 
         phone = User.get_formatted_phone(phone)
 
         if not phone or not otp or (phone == user.phone):
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
-        otp_service = VerifyOTPService.objects.filter(type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE, to=phone,
-                                                      code=otp,
-                                                      usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY).order_by(
-            '-id').first()
+        otp_service = (
+            VerifyOTPService.objects.filter(
+                type=VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE,
+                to=phone,
+                code=otp,
+                usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY,
+            )
+            .order_by("-id")
+            .first()
+        )
 
         if not otp_service or otp_service.is_expired():
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.AUTH_WRONG_OTP.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.AUTH_WRONG_OTP.value,
+            )
 
         otp_service.delete()
         user.phone = phone
@@ -1014,27 +1064,33 @@ class UserEditPhoneConfirmView(APIView):
         access_token = refresh_token.access_token
 
         user_token = {
-            'access': str(access_token),
-            'refresh': str(refresh_token),
+            "access": str(access_token),
+            "refresh": str(refresh_token),
         }
-        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
-                            message=ResponseMessage.SUCCESS.value)
+        return BaseResponse(
+            data=user_token,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.SUCCESS.value,
+        )
 
 
 class UserEditEmailRequestView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        email = request.data.get('email', None).lower()
-        otp_usage = request.data.get('otp_usage', None)
+        email = request.data.get("email", None).lower()
+        otp_usage = request.data.get("otp_usage", None)
         if not email or not otp_usage:
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
         if validate_email(email):
             if User.objects.filter(email=email).exists():
-                return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                    message=ResponseMessage.USER_PANEL_EMAIL_ALREADY_EXIST.value)
+                return BaseResponse(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.USER_PANEL_EMAIL_ALREADY_EXIST.value,
+                )
             # Check for the latest OTP service record for phone authentication
             otp_service = (
                 VerifyOTPService.objects.filter(
@@ -1049,46 +1105,73 @@ class UserEditEmailRequestView(APIView):
                 if otp_service.is_expired():
                     otp_service.delete()
                     new_otp_service = VerifyOTPService.objects.create(
-                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email, usage=otp_usage)
+                        type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
+                        to=email,
+                        usage=otp_usage,
+                    )
                     new_otp_service.send_otp()
 
-                    return BaseResponse(status=status.HTTP_200_OK,
-                                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+                    return BaseResponse(
+                        status=status.HTTP_200_OK,
+                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(
+                            username=email
+                        ),
+                    )
                 else:
-                    return BaseResponse(status=status.HTTP_200_OK,
-                                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+                    return BaseResponse(
+                        status=status.HTTP_200_OK,
+                        message=ResponseMessage.EMAIL_OTP_SENT.value.format(
+                            username=email
+                        ),
+                    )
             else:
                 new_otp_service = VerifyOTPService.objects.create(
-                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email, usage=otp_usage)
+                    type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
+                    to=email,
+                    usage=otp_usage,
+                )
 
                 new_otp_service.send_otp()
-                return BaseResponse(status=status.HTTP_200_OK,
-                                    message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email))
+                return BaseResponse(
+                    status=status.HTTP_200_OK,
+                    message=ResponseMessage.EMAIL_OTP_SENT.value.format(username=email),
+                )
         else:
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.NOT_VALID_EMAIL.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.NOT_VALID_EMAIL.value,
+            )
 
 
 class UserEditEmailConfirmView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
-        email = request.data.get('email', None).lower()
-        otp = request.data.get('otp', None)
+        email = request.data.get("email", None).lower()
+        otp = request.data.get("otp", None)
         user = self.request.user
 
         if not email or not otp or (email == user.email):
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.FAILED.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
 
-        otp_service = VerifyOTPService.objects.filter(type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL, to=email,
-                                                      code=otp,
-                                                      usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY).order_by(
-            '-id').first()
+        otp_service = (
+            VerifyOTPService.objects.filter(
+                type=VerifyOTPService.VerifyOTPServiceTypeChoice.EMAIL,
+                to=email,
+                code=otp,
+                usage=VerifyOTPService.VerifyOTPServiceUsageChoice.VERIFY,
+            )
+            .order_by("-id")
+            .first()
+        )
 
         if not otp_service or otp_service.is_expired():
-            return BaseResponse(status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.AUTH_WRONG_OTP.value)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.AUTH_WRONG_OTP.value,
+            )
 
         otp_service.delete()
         user.email = email
@@ -1100,32 +1183,44 @@ class UserEditEmailConfirmView(APIView):
         access_token = refresh_token.access_token
 
         user_token = {
-            'access': str(access_token),
-            'refresh': str(refresh_token),
+            "access": str(access_token),
+            "refresh": str(refresh_token),
         }
-        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
-                            message=ResponseMessage.SUCCESS.value)
+        return BaseResponse(
+            data=user_token,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.SUCCESS.value,
+        )
 
 
 class UserEditPassword(APIView):
     permission_classes = [IsAuthenticated]
 
     def put(self, request, format=None):
-        current_password = request.data.get('current_password')
-        password = request.data.get('password')
-        confirm_password = request.data.get('confirm_password')
+        current_password = request.data.get("current_password")
+        password = request.data.get("password")
+        confirm_password = request.data.get("confirm_password")
         user = self.request.user
 
         if user.has_usable_password() and not user.check_password(current_password):
-            return BaseResponse(data={'error_input_name': 'current_password'}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.USER_PANEL_CURRENT_PASSWORD_WRONG.value)
+            return BaseResponse(
+                data={"error_input_name": "current_password"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.USER_PANEL_CURRENT_PASSWORD_WRONG.value,
+            )
         is_valid, message = validate_password(password)
         if not is_valid:
-            return BaseResponse(data={'error_input_name': 'password'}, status=status.HTTP_400_BAD_REQUEST,
-                                message=message)
+            return BaseResponse(
+                data={"error_input_name": "password"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=message,
+            )
         if password != confirm_password:
-            return BaseResponse(data={'error_input_name': 'confirm_password'}, status=status.HTTP_400_BAD_REQUEST,
-                                message=ResponseMessage.PASSWORD_CONFIRM_MISMATCH.value)
+            return BaseResponse(
+                data={"error_input_name": "confirm_password"},
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.PASSWORD_CONFIRM_MISMATCH.value,
+            )
 
         user.set_password(password)
         user.revoke_all_tokens()
@@ -1136,8 +1231,11 @@ class UserEditPassword(APIView):
         access_token = refresh_token.access_token
 
         user_token = {
-            'access': str(access_token),
-            'refresh': str(refresh_token),
+            "access": str(access_token),
+            "refresh": str(refresh_token),
         }
-        return BaseResponse(data=user_token, status=status.HTTP_200_OK,
-                            message=ResponseMessage.RESET_PASSWORD_SUCCESSFULLY.value)
+        return BaseResponse(
+            data=user_token,
+            status=status.HTTP_200_OK,
+            message=ResponseMessage.RESET_PASSWORD_SUCCESSFULLY.value,
+        )

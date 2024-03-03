@@ -72,8 +72,8 @@ class UserEditProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = (
-            'id',
-            'first_name',
-            'last_name',
-            'national_code',
+            "id",
+            "first_name",
+            "last_name",
+            "national_code",
         )

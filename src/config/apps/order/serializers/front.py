@@ -3,7 +3,13 @@ from rest_framework import serializers
 from config.apps.catalog.models import Product
 from config.apps.catalog.serializers.front import ProductAttributeValueSerializer
 from config.apps.inventory.serializers.front import StockRecordSerializer
-from config.apps.order.models import OrderItem, Order, ShippingRate, ShippingService, OrderAddress
+from config.apps.order.models import (
+    OrderItem,
+    Order,
+    ShippingRate,
+    ShippingService,
+    OrderAddress,
+)
 from config.libs.persian.date import model_date_field_convertor
 
 
@@ -224,16 +230,18 @@ class OrderItemDetailProfileSerializer(serializers.ModelSerializer):
 class OrderAddressDetailProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderAddress
-        fields = '__all__'
+        fields = "__all__"
 
 
 class OrderDetailProfileSerializer(serializers.ModelSerializer):
     items = OrderItemDetailProfileSerializer(many=True)
     shipping_rate = ShippingRateSerializer()
     address = OrderAddressDetailProfileSerializer()
-    payment_price = serializers.IntegerField(source='get_payment_price')
-    total_items_before_discount_price = serializers.IntegerField(source='get_total_items_before_discount_price')
-    total_profit_price = serializers.IntegerField(source='get_total_profit_price')
+    payment_price = serializers.IntegerField(source="get_payment_price")
+    total_items_before_discount_price = serializers.IntegerField(
+        source="get_total_items_before_discount_price"
+    )
+    total_profit_price = serializers.IntegerField(source="get_total_profit_price")
 
     class Meta:
         model = Order
@@ -252,7 +260,6 @@ class OrderDetailProfileSerializer(serializers.ModelSerializer):
             "payment_price",
             "total_items_before_discount_price",
             "total_profit_price",
-
             "final_paid_price",
             "final_profit_price",
             "final_total_items_final_price",

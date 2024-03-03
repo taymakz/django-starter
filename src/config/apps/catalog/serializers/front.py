@@ -13,6 +13,7 @@ from config.apps.catalog.models import (
     ProductProperty,
     ProductPropertyValue,
     ProductClass,
+    ProductComment,
 )
 from config.apps.inventory.serializers.front import (
     StockRecordCardSerializer,
@@ -233,7 +234,6 @@ class ProductClassSerializer(serializers.ModelSerializer):
             "track_stock",
             "require_shipping",
             "properties",
-
         )
 
 
@@ -349,3 +349,30 @@ class ProductDetailSchemaSerializer(serializers.ModelSerializer):
 
     def get_is_available_in_stock(self, obj: Product):
         return obj.stockrecord.num_stock > 0 if obj.product_class.track_stock else True
+
+
+class ProductCommentListSerializer(serializers.ModelSerializer):
+    is_buyer = serializers.BooleanField()
+
+    class Meta:
+        model = ProductComment
+        fields = (
+            "id",
+            "user",
+            "title",
+            "comment",
+            "suggestion",
+            "accept_by_admin",
+            "is_buyer",
+        )
+
+
+class ProductCommentCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductComment
+        fields = (
+            "product",
+            "title",
+            "comment",
+            "suggestion",
+        )

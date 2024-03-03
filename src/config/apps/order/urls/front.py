@@ -28,8 +28,13 @@ urlpatterns = [
         name="order_shipping_list",
     ),
     path("coupon/", front.OrderCouponUseAPIView.as_view(), name="order_coupon"),
-
     # Profile
-    path("profile/", front.OrderGetProfileDataView.as_view(), name="order_profile_data"),
-    path("profile/<str:slug>", front.OrderDetailProfileDataView.as_view(), name="order_detail_profile_data")
+    path(
+        "profile/", front.OrderGetProfileDataView.as_view(), name="order_profile_data"
+    ),
+    path(
+        "profile/<str:slug>",
+        front.OrderDetailProfileDataView.as_view(),
+        name="order_detail_profile_data",
+    ),
 ]
