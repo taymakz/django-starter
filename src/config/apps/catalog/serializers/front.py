@@ -363,6 +363,7 @@ class ProductCommentListSerializer(serializers.ModelSerializer):
             "comment",
             "suggestion",
             "is_buyer",
+            "created_at",
         )
 
 

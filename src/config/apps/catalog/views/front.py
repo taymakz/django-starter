@@ -320,14 +320,13 @@ class ProductCommentListAPIView(ListAPIView):
             ),
             output_field=BooleanField(),
         )
-    )
+    ).order_by('-created_at')
 
-    def list(self, request, *args, **kwargs):
-        product_id = request.data.get("product_id", None)
+    def list(self, request, product_id=None):
         if not product_id:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
         # Filter the queryset using the provided product_id
-        queryset = super().get_queryset()
+        queryset = super().get_queryset().filter(product_id=product_id)
 
         # Proceed with standard list view behavior
         page = self.paginate_queryset(queryset)

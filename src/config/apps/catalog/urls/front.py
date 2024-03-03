@@ -15,7 +15,7 @@ urlpatterns = [
         name="product-detail",
     ),
     path(
-        "product/comment/list/",
+        "product/comment/list/<int:product_id>/",
         front.ProductCommentListAPIView.as_view(),
         name="product-comment-list",
     ),
