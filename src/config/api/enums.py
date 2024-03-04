@@ -12,6 +12,8 @@ class ResponseMessage(Enum):
     NOT_VALID_EMAIL = "ایمیل وارد شده نامعتبر میباشد"
     NOT_VALID_PHONE = "شماره موبایل شده نامعتبر میباشد"
 
+    SUBMIT_PHONE = "شماره موبایل ثبت نشده"
+
     # Notification Messages
 
     PHONE_OTP_SENT = "کد تایید به شماره {username} پیامک شد"

@@ -67,6 +67,11 @@ class TransactionRequest(APIView):
 
     def post(self, request, format=None):
         user = request.user
+        if not user.phone:
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
+            )
         try:
 
             current_order: Order = (
@@ -316,7 +321,7 @@ class TransactionRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                            + str(response["Authority"]),
+                                                    + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
@@ -400,9 +405,9 @@ class TransactionRePaymentRequest(APIView):
                 message=ResponseMessage.FAILED.value,
             )
         if (
-            pending_order.items.count() == 0
-            or pending_order.shipping_rate is None
-            or pending_order.address is None
+                pending_order.items.count() == 0
+                or pending_order.shipping_rate is None
+                or pending_order.address is None
         ):
             pending_order.lock = False
             pending_order.save()
@@ -462,7 +467,7 @@ class TransactionRePaymentRequest(APIView):
                         data={
                             "is_free": False,
                             "payment_gateway_link": settings.ZP_API_STARTPAY
-                            + str(response["Authority"]),
+                                                    + str(response["Authority"]),
                         },
                         status=status.HTTP_200_OK,
                         message="در حال انتقال به درگاه پرداخت",
