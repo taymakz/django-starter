@@ -49,7 +49,7 @@ class RequestCurrentUserView(RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return User.objects.prefetch_related("search_histories")
+        return User.objects.prefetch_related("search_histories").all()
 
     def get_object(self):
         return self.get_queryset().get(pk=self.request.user.pk)
@@ -92,8 +92,11 @@ class UserLogoutView(APIView):
             # Get the refresh token from the request data
             refresh_token = serializer.validated_data.get("refresh")
             # Blacklist the refresh token using Django Rest Framework SimpleJWT
-            token = RefreshToken(refresh_token)
-            token.blacklist()
+            try:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            except:
+                pass
 
             # Respond with a success message
             return BaseResponse(
@@ -327,11 +330,11 @@ class UserOTPAuthenticationView(APIView):
         # Determine the type of username (email or phone) and format it
         username_type = User.get_username_type(username)
         username = User.get_formatted_username(username)
+
         user = None
         try:
             # Try to retrieve the user based on the formatted username
             user = User.objects.get(**{username_type.lower(): username})
-
         except User.DoesNotExist:
             # If user does not exist, check the OTP service
             otp_service = (

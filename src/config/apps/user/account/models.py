@@ -18,6 +18,9 @@ from config.libs.validator.validators import validate_phone, validate_email
 
 
 class UserManager(BaseUserManager):
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
     def create_user(self, email=None, phone=None, password=None, **extra_fields):
         if email:
             email = self.normalize_email(email)
@@ -68,12 +71,32 @@ class User(BaseModel, AbstractUser):
     USERNAME_FIELD = "phone"
     REQUIRED_FIELDS = []
 
+    before_delete_username = models.CharField(max_length=255, null=True, blank=True)
+    before_delete_email = models.EmailField(null=True, blank=True)
+    before_delete_phone = models.CharField(max_length=11, null=True, blank=True)
+
     class Meta:
         default_manager_name = "objects"
         db_table = "users"
 
     def __str__(self) -> str:
         return f"{self.username}"
+
+    def delete(self, *args, **kwargs):
+        if not self.pk:
+            raise ValueError("Instance must be saved before it can be deleted.")
+
+        # Store the current values of unique fields into the respective before_delete fields
+        self.before_delete_username = self.username
+        self.before_delete_email = self.email
+        self.before_delete_phone = self.phone
+
+        self.phone = None
+        self.email = None
+        self.username = uuid.uuid4().hex[:12]  # Unique random value for username
+
+        # Call the delete method of the superclass (BaseModel)
+        super().delete(*args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -160,9 +183,9 @@ class User(BaseModel, AbstractUser):
     @staticmethod
     def get_username_type(username: str) -> str:
         if validate_phone(username):
-            return User.UsernameTypeChoice.PHONE
+            return User.UsernameTypeChoice.PHONE.name
         elif validate_email(username):
-            return User.UsernameTypeChoice.EMAIL
+            return User.UsernameTypeChoice.EMAIL.name
         else:
             raise ValueError("Invalid username type. Must be either phone or email.")
 

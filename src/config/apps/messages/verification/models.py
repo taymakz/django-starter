@@ -7,13 +7,13 @@ from django.utils import timezone
 
 class VerifyOTPService(models.Model):
     class VerifyOTPServiceUsageChoice(models.TextChoices):
-        AUTHENTICATE = "احراز هویت"
-        RESET_PASSWORD = "بازیابی کلمه عبور"
-        VERIFY = "تایید"
+        AUTHENTICATE = "AUTHENTICATE"
+        RESET_PASSWORD = "RESET_PASSWORD"
+        VERIFY = "VERIFY"
 
     class VerifyOTPServiceTypeChoice(models.TextChoices):
-        PHONE = "شماره موبایل"
-        EMAIL = "ایمیل"
+        PHONE = "PHONE"
+        EMAIL = "EMAIL"
 
     type = models.CharField(max_length=12, choices=VerifyOTPServiceTypeChoice)
     usage = models.CharField(

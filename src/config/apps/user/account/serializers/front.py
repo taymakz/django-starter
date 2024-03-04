@@ -11,7 +11,7 @@ class UserSearchHistorySerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="get_full_name")
-    has_password = serializers.CharField(source="has_usable_password")
+    has_password = serializers.BooleanField(source="has_usable_password")
     search_histories = UserSearchHistorySerializer(many=True)
 
     class Meta:

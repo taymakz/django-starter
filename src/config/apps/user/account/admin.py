@@ -25,6 +25,9 @@ class UserForm(forms.ModelForm):
             "is_staff",
             "national_code",
             "last_login",
+            "before_delete_username",
+            "before_delete_email",
+            "before_delete_phone",
         )
 
 
@@ -81,6 +84,8 @@ class UserRecentVisitedProductAdmin(admin.ModelAdmin):
 
 @admin.register(RecycleUser)
 class RecycleUserAdmin(admin.ModelAdmin):
+    form = UserForm
+
     list_display = (
         "username",
         "email",
@@ -88,6 +93,9 @@ class RecycleUserAdmin(admin.ModelAdmin):
         "first_name",
         "last_name",
         "is_superuser",
+        "before_delete_username",
+        "before_delete_email",
+        "before_delete_phone",
     )
     actions = ["recover_items"]
 
