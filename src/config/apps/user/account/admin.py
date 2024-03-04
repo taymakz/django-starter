@@ -1,6 +1,5 @@
 from django import forms
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     User,
@@ -17,6 +16,7 @@ class UserForm(forms.ModelForm):
     class Meta:
         model = User
         fields = (
+            "username",
             "email",
             "phone",
             "first_name",
@@ -29,7 +29,7 @@ class UserForm(forms.ModelForm):
 
 
 @admin.register(User)
-class UserAdmin(UserAdmin):
+class UserAdmin(admin.ModelAdmin):
     form = UserForm
     list_display = (
         "username",
@@ -80,7 +80,7 @@ class UserRecentVisitedProductAdmin(admin.ModelAdmin):
 
 
 @admin.register(RecycleUser)
-class UserAdmin(admin.ModelAdmin):
+class RecycleUserAdmin(admin.ModelAdmin):
     list_display = (
         "username",
         "email",
