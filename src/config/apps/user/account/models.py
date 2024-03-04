@@ -89,9 +89,9 @@ class User(BaseModel, AbstractUser):
                 self.set_unusable_password()
         # Check if email or phone has changed
         if self.email != self.__previous_email or self.phone != self.__previous_phone:
-            if self.phone and self.phone != self.username:
+            if self.phone:
                 self.username = self.phone
-            elif self.email and self.email != self.username:
+            elif self.email:
                 self.username = self.email
 
             # Create UserPreviousDetailHistory objects for common fields
@@ -125,9 +125,9 @@ class User(BaseModel, AbstractUser):
 
     def revoke_all_tokens(self) -> None:
         for token in OutstandingToken.objects.filter(user=self).exclude(
-            id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
-                "token_id", flat=True
-            ),
+                id__in=BlacklistedToken.objects.filter(token__user=self).values_list(
+                    "token_id", flat=True
+                ),
         ):
             BlacklistedToken.objects.create(token=token)
 
