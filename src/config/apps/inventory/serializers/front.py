@@ -27,13 +27,13 @@ class StockRecordCardSerializer(serializers.ModelSerializer):
     def get_special_sale_price_start_at(self, obj: StockRecord):
         return (
             obj.special_sale_price_start_at
-            if obj.is_special_price_dates_valid
+            if obj.is_special_price_dates_valid and obj.special_sale_price_start_at
             else None
         )
 
     def get_special_sale_price_end_at(self, obj: StockRecord):
         return (
-            obj.special_sale_price_end_at if obj.is_special_price_dates_valid else None
+            obj.special_sale_price_end_at if obj.is_special_price_dates_valid and obj.special_sale_price_end_at else None
         )
 
 

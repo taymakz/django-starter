@@ -31,7 +31,7 @@ class StockRecord(models.Model):
             if self.special_sale_price_end_at and not self.special_sale_price_start_at:
                 return True
             elif (
-                self.special_sale_price_start_at and not self.special_sale_price_end_at
+                    self.special_sale_price_start_at and not self.special_sale_price_end_at
             ):
                 return True
             elif self.special_sale_price_start_at and self.special_sale_price_end_at:
@@ -42,11 +42,13 @@ class StockRecord(models.Model):
     def is_special_price_dates_valid(self) -> bool:
         if self.special_sale_price_start_at and not self.special_sale_price_end_at:
             return self.special_sale_price_start_at <= now()
+        elif not self.special_sale_price_start_at and self.special_sale_price_end_at:
+            return now() <= self.special_sale_price_end_at
         elif self.special_sale_price_start_at and self.special_sale_price_end_at:
             return (
-                self.special_sale_price_start_at
-                <= now()
-                <= self.special_sale_price_end_at
+                    self.special_sale_price_start_at
+                    <= now()
+                    <= self.special_sale_price_end_at
             )
         else:
             return False
@@ -55,31 +57,31 @@ class StockRecord(models.Model):
     def final_price(self):
         if self.special_sale_price:
             if self.special_sale_price and not (
-                self.special_sale_price_end_at or self.special_sale_price_start_at
+                    self.special_sale_price_end_at or self.special_sale_price_start_at
             ):
                 return self.special_sale_price
             elif (
-                self.special_sale_price_start_at
-                and self.special_sale_price_end_at
-                and self.special_sale_price_start_at
-                <= now()
-                <= self.special_sale_price_end_at
+                    self.special_sale_price_start_at
+                    and self.special_sale_price_end_at
+                    and self.special_sale_price_start_at
+                    <= now()
+                    <= self.special_sale_price_end_at
             ):
                 # Special sale price is set, and both start and end dates are provided,
                 # and the current time is within the specified range.
                 return self.special_sale_price
             elif (
-                self.special_sale_price_start_at
-                and not self.special_sale_price_end_at
-                and self.special_sale_price_start_at <= now()
+                    self.special_sale_price_start_at
+                    and not self.special_sale_price_end_at
+                    and self.special_sale_price_start_at <= now()
             ):
                 # Special sale price is set, start date is provided, but end date is not,
                 # and the current time is after the start date.
                 return self.special_sale_price
             elif (
-                not self.special_sale_price_start_at
-                and self.special_sale_price_end_at
-                and now() <= self.special_sale_price_end_at
+                    not self.special_sale_price_start_at
+                    and self.special_sale_price_end_at
+                    and now() <= self.special_sale_price_end_at
             ):
                 # Special sale price is set, end date is provided, but start date is not,
                 # and the current time is before the end date.
@@ -125,25 +127,25 @@ class StockRecord(models.Model):
                     if item.stockrecord.sale_price < minimum_stock.sale_price:
                         minimum_stock = item.stockrecord
                     if (
-                        item.stockrecord.is_special_price_dates_valid
-                        and item.stockrecord.has_special_price_with_date
+                            item.stockrecord.is_special_price_dates_valid
+                            and item.stockrecord.has_special_price_with_date
                     ):
                         if (
-                            item.stockrecord.special_sale_price_start_at
-                            and item.stockrecord.special_sale_price_end_at
+                                item.stockrecord.special_sale_price_start_at
+                                and item.stockrecord.special_sale_price_end_at
                         ):
                             if (
-                                min_start_date is None
-                                or item.stockrecord.special_sale_price_start_at
-                                < min_start_date
+                                    min_start_date is None
+                                    or item.stockrecord.special_sale_price_start_at
+                                    < min_start_date
                             ):
                                 min_start_date = (
                                     item.stockrecord.special_sale_price_start_at
                                 )
                             if (
-                                max_end_date is None
-                                or item.stockrecord.special_sale_price_end_at
-                                > max_end_date
+                                    max_end_date is None
+                                    or item.stockrecord.special_sale_price_end_at
+                                    > max_end_date
                             ):
                                 max_end_date = (
                                     item.stockrecord.special_sale_price_end_at

@@ -208,7 +208,7 @@ class ProductClass(models.Model):
     title_en = models.CharField(max_length=255, db_index=True)
     description = models.CharField(max_length=2048, null=True, blank=True)
     slug = models.SlugField(unique=True, allow_unicode=True, db_index=True)
-    properties = models.ManyToManyField("ProductProperty")
+    properties = models.ManyToManyField("ProductProperty", null=True, blank=True)
     track_stock = models.BooleanField(default=True)
     require_shipping = models.BooleanField(default=True)
 
