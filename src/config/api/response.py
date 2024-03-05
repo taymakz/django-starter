@@ -20,7 +20,7 @@ class PaginationApiResponse(PageNumberPagination):
     page_size_query_param = "take"
     page_query_param = "page"
     page_size = 20
-    max_page_size = 100
+    max_page_size = 20
 
     def get_paginated_response(self, data) -> BaseResponse:
         current_page = self.page.number
