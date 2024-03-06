@@ -7,7 +7,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
 DEBUG = os.environ.get("DEBUG") == "True"
-DEBUG_TOOLBAR = os.environ.get("DEBUG_TOOLBAR") == "True"
 if DEBUG:
     INTERNAL_IPS = ["127.0.0.1", "localhost"]
 LOCAL_STORAGE = os.environ.get("LOCAL_STORAGE") == "True"
@@ -88,39 +87,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Development
-if DEBUG_TOOLBAR:
-    ALLOWED_HOSTS = ["*"]
-
-    INSTALLED_APPS = [
-                         "daphne",
-                         "drf_spectacular",
-                         "debug_toolbar",
-                     ] + INSTALLED_APPS
-
-    MIDDLEWARE = [
-                     'debug_toolbar.middleware.DebugToolbarMiddleware'
-                 ] + MIDDLEWARE
-    INTERNAL_IPS = ["127.0.0.1", "localhost"]
-    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
-LOGGING = {
-    "version": 1,
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-        },
-    },
-    "loggers": {
-        "django.db.backends": {
-            "level": "DEBUG",
-        },
-    },
-    "root": {
-        "handlers": ["console"],
-    },
-}
-
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = "config.urls.base"
 
 TEMPLATES = [
     {
@@ -141,6 +108,8 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+# For Export
+#  PYTHONIOENCODING=utf-8 python manage.py dumpdata > data.json
 if os.environ.get("DB_LOCAL") == "True":
     DATABASES = {
         "default": {

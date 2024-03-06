@@ -4,8 +4,6 @@ from random import randint
 from django.db import models
 from django.utils import timezone
 
-from config.apps.messages.verification import tasks
-
 
 class VerifyOTPService(models.Model):
     class VerifyOTPServiceUsageChoice(models.TextChoices):
@@ -45,4 +43,5 @@ class VerifyOTPService(models.Model):
 
     def send_otp(self):
         if not self.is_expired():
+            from config.apps.messages.verification import tasks
             tasks.send_otp_celery.delay(to=self.to, code=self.code, type=self.type)
