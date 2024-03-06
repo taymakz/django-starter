@@ -2,33 +2,29 @@ version: "3.9"
 
 services:
   backend:
+
     container_name: django_app
     build:
       context: .
+      dockerfile: Dockerfile.dev
     command: >
       sh -c "python manage.py makemigrations &&
              python manage.py migrate &&
-             gunicorn config.wsgi:application --bind 0.0.0.0:8000"
-    #             python manage.py runserver 0.0.0.0:8000"
+             python manage.py runserver 0.0.0.0:8000"
 
+    ports:
+      - "8000:8000"
 
+    expose:
+      - "8000"
     volumes:
       - ./src:/src
+      - ./data/web:/vol/web
     env_file:
       - ./.env
     depends_on:
       - db
       - redis
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    restart: always
-    ports:
-      - "8000:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-    depends_on:
-      - backend
 
   db:
     container_name: database

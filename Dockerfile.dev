@@ -21,7 +21,7 @@ WORKDIR src
 
 
 
-RUN /py/bin/pip install -r /requirements/base.txt
+RUN /py/bin/pip install -r /requirements/development.txt
 
 # RUN apk add  geos gdal
 
@@ -39,6 +39,7 @@ ENV PATH="/scripts:/py/bin:$PATH"
 
 USER taymaz
 
-CMD python manage.py makemigrations
-CMD python manage.py migrate
-CMD python manage.py runserver 0.0.0.0:8000
+#CMD ["run.sh"]
+CMD ["python", "manage.py", "makemigrations"]
+CMD ["python", "manage.py", "migrate"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

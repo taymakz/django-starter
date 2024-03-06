@@ -25,7 +25,7 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductPropertyValue,
     OptionGroupValue,
-    ProductComment,
+    ProductComment, Brand,
 )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
@@ -34,9 +34,84 @@ from config.apps.catalog.serializers.front import (
     ProductDetailSchemaSerializer,
     ProductDetailChildrenSerializer,
     ProductCommentListSerializer,
-    ProductCommentCreateSerializer,
+    ProductCommentCreateSerializer, CatalogSearchSerializer, CatalogSearchProductSerializer,
+    CatalogSearchBrandSerializer,
 )
 from config.apps.order.models import OrderItem, Order
+
+
+class CatalogSearchView(APIView):
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    serializer_class = CatalogSearchSerializer
+
+    def get(self, request, *args, **kwargs):
+        try:
+            query = self.request.query_params.get('q', '')
+            if len(query) < 3:  # only search if query length is more than 3 characters
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+            products = Product.objects.select_related('product_class', 'stockrecord').only(
+                "id",
+                "title_ir",
+                "title_en",
+                "slug",
+                "short_slug",
+                "upc",
+                "is_public",
+                "structure",
+                "product_class__track_stock",
+            ).filter(
+                Q(title_ir__icontains=query) |
+                Q(title_en__icontains=query) |
+                Q(short_slug__icontains=query) |
+                Q(upc__icontains=query),
+                is_public=True,
+                structure__in=[
+                    Product.ProductTypeChoice.standalone,
+                    Product.ProductTypeChoice.parent,
+                ]).annotate(
+                primary_image_file=Subquery(
+                    ProductImage.objects.select_related("image")
+                    .filter(product=OuterRef("pk"))
+                    .values("image__file")[:1]
+                )
+            ).annotate(
+                is_available=Case(
+                    When(
+                        product_class__track_stock=True,
+                        then=Case(
+                            When(stockrecord__num_stock__gt=0, then=True),
+                            default=False,
+                            output_field=BooleanField(),
+                        ),
+                    ),
+                    default=True,
+                    output_field=BooleanField(),
+                )
+            ).order_by("-is_available").distinct()[:10]
+
+            brands = Brand.objects.select_related('image').only("id", "title_ir", "title_en", "slug", "image__file",
+                                                                "image__width", "image__height").filter(
+                Q(title_ir__icontains=query) |
+                Q(title_en__icontains=query) |
+                Q(slug__icontains=query)
+            ).distinct()[:3]
+
+            data = {
+                "products": CatalogSearchProductSerializer(products, many=True).data,
+                "brands": CatalogSearchBrandSerializer(brands, many=True).data
+            }
+            return BaseResponse(
+                data=data,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value
+            )
+        except Exception as e:
+            print(e)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value
+            )
 
 
 class ProductSearchView(ListAPIView):

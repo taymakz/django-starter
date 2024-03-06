@@ -376,3 +376,63 @@ class ProductCommentCreateSerializer(serializers.ModelSerializer):
             "comment",
             "suggestion",
         )
+
+
+class CatalogSearchProductSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    url = serializers.CharField(source="get_absolute_url")
+
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'title_ir',
+            'title_en',
+            'url',
+            'image'
+        ]
+
+    def get_image(self, obj):
+        return obj.primary_image_file
+
+
+# class CatalogSearchCategorySerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Category
+#         fields = [
+#             'id',
+#             'title_ir',
+#             'title_en',
+#             'slug',
+#         ]
+
+
+class CatalogSearchBrandSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Brand
+        fields = [
+            'id',
+            'image',
+            'title_ir',
+            'title_en',
+            'slug',
+        ]
+
+    def get_image(self, obj: Brand):
+        return obj.image.file.name
+
+
+class CatalogSearchSerializer(serializers.ModelSerializer):
+    products = CatalogSearchProductSerializer(many=True)
+    # categories = CatalogSearchCategorySerializer(many=True)
+    brands = CatalogSearchBrandSerializer(many=True)
+
+    class Meta:
+        model = Product
+        fields = [
+            'products',
+            # 'categories',
+            'brands',
+        ]
