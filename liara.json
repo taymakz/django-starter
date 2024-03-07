@@ -1,7 +1,7 @@
 {
   "platform": "docker",
   "app": "tipoosh",
-  "port": 80,
+  "port": 8000,
   "build": {
     "dockerfile": "./Dockerfile"
   }

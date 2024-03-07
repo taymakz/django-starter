@@ -12,23 +12,22 @@ services:
               python manage.py runserver 0.0.0.0:8000"
     ports:
       - "8000:8000"
-
     volumes:
       - ./src:/src
     env_file:
       - ./.env
     depends_on:
       - redis
-  nginx:
-    image: nginx:alpine
-    container_name: nginx
-    restart: always
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx:/etc/nginx/conf.d
-    depends_on:
-      - backend
+  #  nginx:
+  #    build: './nginx'
+  #    container_name: nginx
+  #    restart: always
+  #    ports:
+  #      - "80:80"
+  #    volumes:
+  #      - ./nginx:/etc/nginx/conf.d
+  #    depends_on:
+  #      - backend
 
   redis:
     container_name: redis
