@@ -40,7 +40,7 @@ class Banner(BaseModel):
     def save(self, *args, **kwargs):
         # Call the parent class's save method
         super().save(*args, **kwargs)
-        # self.re_new_cache()
+        self.re_new_cache()
 
     @staticmethod
     def re_new_cache():

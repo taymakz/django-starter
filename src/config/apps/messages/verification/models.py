@@ -23,6 +23,8 @@ class VerifyOTPService(models.Model):
     )
     to = models.CharField(max_length=355)
     code = models.CharField(max_length=5)
+    is_sent = models.BooleanField(default=False)
+    result = models.TextField(null=True, blank=True)
     expire_at = models.DateTimeField()
 
     class Meta:
