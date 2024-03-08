@@ -222,7 +222,6 @@ CACHES = {
 }
 
 REST_FRAMEWORK = {
-    # YOUR SETTINGS
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
@@ -275,14 +274,6 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
-
-# CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
-# CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-# CELERY_ACCEPT_CONTENT = ["application/json"]
-# CELERY_TIMEZONE = "Asia/Tehran"
-# CELERY_ENABLE_UTC = False
-# CELERY_TASK_SERIALIZER = "json"
-# CELERY_RESULT_SERIALIZER = 'json'
 
 BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
