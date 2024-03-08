@@ -19,5 +19,3 @@ django-imagekit
 requests
 gunicorn
 markdown
-
-

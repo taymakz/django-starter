@@ -39,6 +39,4 @@ ENV PATH="/scripts:/py/bin:$PATH"
 
 USER taymaz
 
-CMD python manage.py makemigrations
-CMD python manage.py migrate
-CMD gunicorn config.wsgi:application --bind 0.0.0.0:8000
+CMD ["run.sh"]

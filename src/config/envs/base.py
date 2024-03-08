@@ -6,6 +6,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
 
+PRODUCTION = os.environ.get("PRODUCTION") == "True"
+
 DEBUG = os.environ.get("DEBUG") == "True"
 if DEBUG:
     INTERNAL_IPS = ["127.0.0.1", "localhost"]
@@ -86,8 +88,40 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+if PRODUCTION:
+    ROOT_URLCONF = "config.urls.base"
+else:
+    ROOT_URLCONF = "config.urls.development"
 
-ROOT_URLCONF = "config.urls.base"
+if not PRODUCTION:
+    INSTALLED_APPS = [
+                         "drf_spectacular",
+
+                         "daphne",
+                         "debug_toolbar",
+                     ] + INSTALLED_APPS
+
+    MIDDLEWARE = [
+                     'debug_toolbar.middleware.DebugToolbarMiddleware'
+                 ] + MIDDLEWARE
+    INTERNAL_IPS = ["127.0.0.1", "localhost"]
+    DEBUG_TOOLBAR_CONFIG = {"SHOW_TOOLBAR_CALLBACK": lambda request: True}
+    LOGGING = {
+        "version": 1,
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+            },
+        },
+        "loggers": {
+            "django.db.backends": {
+                "level": "DEBUG",
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+        },
+    }
 
 TEMPLATES = [
     {
@@ -186,12 +220,6 @@ CACHES = {
         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
     },
 }
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-CELERY_ACCEPT_CONTENT = ["application/json"]
-CELERY_TIMEZONE = "Asia/Tehran"
-CELERY_ENABLE_UTC = False
-CELERY_TASK_SERIALIZER = "json"
 
 REST_FRAMEWORK = {
     # YOUR SETTINGS
@@ -247,3 +275,19 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_OBTAIN_SERIALIZER": "rest_framework_simplejwt.serializers.TokenObtainSlidingSerializer",
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
+
+# CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+# CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+# CELERY_ACCEPT_CONTENT = ["application/json"]
+# CELERY_TIMEZONE = "Asia/Tehran"
+# CELERY_ENABLE_UTC = False
+# CELERY_TASK_SERIALIZER = "json"
+# CELERY_RESULT_SERIALIZER = 'json'
+
+BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+CELERY_ACCEPT_CONTENT = ["application/json"]
+CELERY_TIMEZONE = "Asia/Tehran"
+CELERY_ENABLE_UTC = False
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = 'json'

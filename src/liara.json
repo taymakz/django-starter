@@ -1,0 +1,9 @@
+{
+  "platform": "django",
+  "django":{
+    "pythonVersion":"3.11",
+    "collectStatic":false
+  },
+  "app": "tipoosh-backend",
+  "port": 8000
+}
