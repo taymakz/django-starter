@@ -165,9 +165,9 @@ class OrderGetView(APIView):
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
 
-                open_order_data = OrderOpenSerializer(open_order).data
+                open_order_data = OrderOpenSerializer([open_order]).data
                 pending_orders_data = OrderPendingSerializer(
-                    pending_orders, many=True
+                    [pending_orders], many=True
                 ).data
                 result = {
                     "open_order": open_order_data,
@@ -593,11 +593,11 @@ class OrderGetProfileDataView(APIView):
             )
 
             result = {
-                "all_orders": OrderProfileSerializer([all_orders], many=True).data if all_orders else [],
-                "current_orders": OrderProfileSerializer([current_orders], many=True).data if current_orders else [],
+                "all_orders": OrderProfileSerializer([all_orders], many=True).data ,
+                "current_orders": OrderProfileSerializer([current_orders], many=True).data,
                 "delivered_orders": OrderProfileSerializer([delivered_orders],
-                                                           many=True).data if delivered_orders else [],
-                "canceled_orders": OrderProfileSerializer([canceled_orders], many=True).data if canceled_orders else [],
+                                                           many=True).data ,
+                "canceled_orders": OrderProfileSerializer([canceled_orders], many=True).data,
             }
             return BaseResponse(
                 data=result,
