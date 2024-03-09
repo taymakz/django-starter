@@ -562,6 +562,13 @@ class TransactionVerify(APIView):
             response = response.json()
 
             if response["Status"] == 100:
+                if current_order.payment_status == Order.PaymentStatusChoice.PAID:
+                    transaction.status = Transaction.TransactionStatusChoice.FAILED
+                    transaction.failed_reason = 'تراكنش قبلا انجام شده است.'
+                    transaction.save()
+                    return redirect(
+                        f"{settings.FRONTEND_URL}/checkout/result/{transaction.transaction_number}/{transaction.slug}/"
+                    )
                 current_order.final_paid_price = total_price
                 current_order.final_profit_price = (
                     current_order.get_total_profit_price()
