@@ -1,8 +1,8 @@
 import uuid
 from datetime import timedelta
 
-from django.contrib.auth.base_user import AbstractBaseUser, BaseUserManager
-from django.contrib.auth.models import PermissionsMixin, AbstractUser
+from django.contrib.auth.base_user import BaseUserManager
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Manager
 from django.utils import timezone
@@ -170,7 +170,7 @@ class User(BaseModel, AbstractUser):
         if User.is_phone(value):
             return (
                 f"0{value}"
-                if len(value) == 10 == User.UsernameTypeChoice.PHONE
+                if len(str(value)) == 10
                 else value
             )
         else:
