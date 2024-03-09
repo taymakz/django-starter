@@ -3,6 +3,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
 
+from config.apps.order.models import OrderItem, Order
+
 
 class StockRecord(models.Model):
     product = models.OneToOneField(
@@ -25,73 +27,56 @@ class StockRecord(models.Model):
     def __str__(self):
         return f"{self.sku}"
 
-    @property
-    def has_special_price_with_date(self) -> bool:
-        if self.special_sale_price:
-            if self.special_sale_price_end_at and not self.special_sale_price_start_at:
-                return True
-            elif (
-                    self.special_sale_price_start_at and not self.special_sale_price_end_at
-            ):
-                return True
-            elif self.special_sale_price_start_at and self.special_sale_price_end_at:
-                return True
-        return False
-
-    @property
-    def is_special_price_dates_valid(self) -> bool:
-        if self.special_sale_price_start_at and not self.special_sale_price_end_at:
-            return self.special_sale_price_start_at <= now()
-        elif not self.special_sale_price_start_at and self.special_sale_price_end_at:
-            return now() <= self.special_sale_price_end_at
-        elif self.special_sale_price_start_at and self.special_sale_price_end_at:
-            return (
-                    self.special_sale_price_start_at
-                    <= now()
-                    <= self.special_sale_price_end_at
-            )
-        else:
-            return False
-
-    @property
-    def final_price(self):
-        if self.special_sale_price:
-            if self.special_sale_price and not (
-                    self.special_sale_price_end_at or self.special_sale_price_start_at
-            ):
-                return self.special_sale_price
-            elif (
-                    self.special_sale_price_start_at
-                    and self.special_sale_price_end_at
-                    and self.special_sale_price_start_at
-                    <= now()
-                    <= self.special_sale_price_end_at
-            ):
-                # Special sale price is set, and both start and end dates are provided,
-                # and the current time is within the specified range.
-                return self.special_sale_price
-            elif (
-                    self.special_sale_price_start_at
-                    and not self.special_sale_price_end_at
-                    and self.special_sale_price_start_at <= now()
-            ):
-                # Special sale price is set, start date is provided, but end date is not,
-                # and the current time is after the start date.
-                return self.special_sale_price
-            elif (
-                    not self.special_sale_price_start_at
-                    and self.special_sale_price_end_at
-                    and now() <= self.special_sale_price_end_at
-            ):
-                # Special sale price is set, end date is provided, but start date is not,
-                # and the current time is before the end date.
-                return self.special_sale_price
-
-        # If no special conditions met, return the regular sale price
-        return self.sale_price
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Save Previous fields value
+        # if  changed and username was phone , email , change username too
+        self.__previous_num_stock = self.num_stock
+        self.__previous_in_order_limit = self.in_order_limit
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+
+        # Reduce Num Stock of all Track Stock products in order items , if num stock or in order limit reduced
+        if self.__previous_num_stock and self.__previous_num_stock > self.num_stock:
+
+            items = (OrderItem.objects.select_related(
+                'order',
+                'product',
+                'product__parent', 'product__product_class',
+                'product__parent__product_class', 'product__stockrecord')
+            .filter(
+                Q(product__product_class__track_stock=True) |
+                Q(product__parent__product_class__track_stock=True),
+                product__stockrecord__id=self.id,
+                count__gt=self.num_stock,
+                order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+            ))
+            for item in items:
+                if self.num_stock == 0:
+                    item.delete()
+                else:
+                    item.count = self.num_stock
+                    item.save(update_fields=['count'])  # Update the count field without saving the whole object
+
+        if self.__previous_in_order_limit and (
+                self.__previous_in_order_limit > self.in_order_limit) and self.in_order_limit != 0:
+
+            items = (OrderItem.objects.select_related(
+                'order',
+                'product',
+                'product__parent', 'product__product_class',
+                'product__parent__product_class', 'product__stockrecord')
+            .filter(
+                Q(product__product_class__track_stock=True) |
+                Q(product__parent__product_class__track_stock=True),
+                product__stockrecord__id=self.id,
+                count__gt=self.in_order_limit,
+                order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
+            ))
+            for item in items:
+                item.count = self.in_order_limit
+                item.save(update_fields=['count'])  # Update the count field without saving the whole object
+
         cache.delete("cached_brand_products")
         if self.product.structure == self.product.ProductTypeChoice.child:
             from config.apps.catalog.models import Product
@@ -173,3 +158,69 @@ class StockRecord(models.Model):
                         "num_stock": self.num_stock,
                     },
                 )
+        super().save(*args, **kwargs)
+
+    @property
+    def has_special_price_with_date(self) -> bool:
+        if self.special_sale_price:
+            if self.special_sale_price_end_at and not self.special_sale_price_start_at:
+                return True
+            elif (
+                    self.special_sale_price_start_at and not self.special_sale_price_end_at
+            ):
+                return True
+            elif self.special_sale_price_start_at and self.special_sale_price_end_at:
+                return True
+        return False
+
+    @property
+    def is_special_price_dates_valid(self) -> bool:
+        if self.special_sale_price_start_at and not self.special_sale_price_end_at:
+            return self.special_sale_price_start_at <= now()
+        elif not self.special_sale_price_start_at and self.special_sale_price_end_at:
+            return now() <= self.special_sale_price_end_at
+        elif self.special_sale_price_start_at and self.special_sale_price_end_at:
+            return (
+                    self.special_sale_price_start_at
+                    <= now()
+                    <= self.special_sale_price_end_at
+            )
+        else:
+            return False
+
+    @property
+    def final_price(self):
+        if self.special_sale_price:
+            if self.special_sale_price and not (
+                    self.special_sale_price_end_at or self.special_sale_price_start_at
+            ):
+                return self.special_sale_price
+            elif (
+                    self.special_sale_price_start_at
+                    and self.special_sale_price_end_at
+                    and self.special_sale_price_start_at
+                    <= now()
+                    <= self.special_sale_price_end_at
+            ):
+                # Special sale price is set, and both start and end dates are provided,
+                # and the current time is within the specified range.
+                return self.special_sale_price
+            elif (
+                    self.special_sale_price_start_at
+                    and not self.special_sale_price_end_at
+                    and self.special_sale_price_start_at <= now()
+            ):
+                # Special sale price is set, start date is provided, but end date is not,
+                # and the current time is after the start date.
+                return self.special_sale_price
+            elif (
+                    not self.special_sale_price_start_at
+                    and self.special_sale_price_end_at
+                    and now() <= self.special_sale_price_end_at
+            ):
+                # Special sale price is set, end date is provided, but start date is not,
+                # and the current time is before the end date.
+                return self.special_sale_price
+
+        # If no special conditions met, return the regular sale price
+        return self.sale_price
