@@ -311,7 +311,7 @@ class TransactionRequest(APIView):
                         Order.PaymentStatusChoice.PENDING_PAYMENT
                     )
                     current_order.lock = False
-
+                    current_order.set_repayment_expire_date()
                     current_order.save()
                     transaction.status = (
                         Transaction.TransactionStatusChoice.REDIRECT_TO_BANK
@@ -539,7 +539,7 @@ class TransactionVerify(APIView):
             )
         except Order.DoesNotExist:
             return redirect(
-                f"{settings.FRONTEND_URL}/vf/tm?f={ResponseMessage.FAILED.value}"
+                f"{settings.FRONTEND_URL}?m={ResponseMessage.FAILED.value}"
             )
         transaction.status = Transaction.TransactionStatusChoice.RETURN_FROM_BANK
         transaction.save()
