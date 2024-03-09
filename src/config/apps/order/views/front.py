@@ -149,15 +149,19 @@ class OrderGetView(APIView):
                         for order in orders
                         if order.payment_status == Order.PaymentStatusChoice.OPEN_ORDER
                     ),
-                    None,
+                    None
                 )
-                pending_orders = [
-                    order
-                    for order in orders
-                    if order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
-                       and order.repayment_expire_at
-                       and order.repayment_expire_at >= now()
-                ]
+                pending_orders = next(
+                    (
+                        order
+                        for order in orders
+                        if order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
+                           and order.repayment_expire_at
+                           and order.repayment_expire_at >= now()
+                    ),
+                    None
+                )
+
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
 
@@ -532,16 +536,71 @@ class OrderCouponUseAPIView(APIView):
 class OrderGetProfileDataView(APIView):
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
-    serializer_class = OrderProfileSerializer
 
     def get(self, request):
         try:
-            orders = Order.objects.filter(
-                user=request.user, payment_status=Order.PaymentStatusChoice.PAID
-            ).order_by("-ordered_at")
-            data = OrderProfileSerializer(orders, many=True).data
+            orders = list(Order.objects.filter(
+                user=request.user,
+                payment_status__in=[Order.PaymentStatusChoice.PAID, Order.PaymentStatusChoice.PENDING_PAYMENT]
+            ).order_by("-ordered_at"))
+            all_orders = next(
+                (
+                    order
+                    for order in orders
+                    if order.payment_status == Order.PaymentStatusChoice.PAID
+                ),
+                None
+            )
+            current_orders = next(
+                (
+                    order
+                    for order in orders
+                    if order.payment_status == Order.PaymentStatusChoice.PAID and
+                       order.delivery_status in [
+                           Order.DeliveryStatusChoice.PENDING,
+                           Order.DeliveryStatusChoice.PROCESSING,
+                           Order.DeliveryStatusChoice.SHIPPED
+                       ]
+                ),
+                None
+            )
+            delivered_orders = next(
+                (
+                    order
+                    for order in orders
+                    if order.payment_status == Order.PaymentStatusChoice.PAID and
+                       order.delivery_status == Order.DeliveryStatusChoice.DELIVERED
+                ),
+                None
+            )
+            canceled_orders = next(
+                (
+                    order
+                    for order in orders
+                    if (
+                               order.payment_status == Order.PaymentStatusChoice.PENDING_PAYMENT
+                               and order.repayment_expire_at
+                               and order.repayment_expire_at < now()
+                       )
+                       or
+                       (
+                               order.payment_status == Order.PaymentStatusChoice.PAID and
+                               order.delivery_status == Order.DeliveryStatusChoice.CANCELED
+                       )
+
+                ),
+                None
+            )
+
+            result = {
+                "all_orders": OrderProfileSerializer([all_orders], many=True).data if all_orders else [],
+                "current_orders": OrderProfileSerializer([current_orders], many=True).data if current_orders else [],
+                "delivered_orders": OrderProfileSerializer([delivered_orders],
+                                                           many=True).data if delivered_orders else [],
+                "canceled_orders": OrderProfileSerializer([canceled_orders], many=True).data if canceled_orders else [],
+            }
             return BaseResponse(
-                data=data,
+                data=result,
                 status=status.HTTP_200_OK,
                 message=ResponseMessage.SUCCESS.value,
             )

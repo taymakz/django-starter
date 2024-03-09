@@ -162,6 +162,7 @@ class OrderProfileSerializer(serializers.ModelSerializer):
             "final_paid_price",
             "ordered_at",
             "delivery_status_modified_at",
+            "repayment_expire_at",
         )
 
 
