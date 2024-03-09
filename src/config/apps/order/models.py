@@ -115,13 +115,13 @@ class Order(BaseModel):
     def save(self, *args, **kwargs):
         if self.delivery_status != self.__original_status:
             if self.delivery_status == Order.DeliveryStatusChoice.PENDING:
-                self.send_order_status_notification("tmd3150snfzkgxj")
+                self.send_order_status_notification("vtj42qg3n1yacnf")
             elif self.delivery_status == Order.DeliveryStatusChoice.PROCESSING:
-                self.send_order_status_notification("ufk0tlhnubtlsdj")
+                self.send_order_status_notification("sf98xqd7n9oziiq")
 
             elif self.delivery_status == Order.DeliveryStatusChoice.SHIPPED:
                 self.shipped_at = now()
-                self.send_order_status_notification("fnhgvsuo2fxg5vn")
+                self.send_order_status_notification("h8cl4qv7b8bmzew")
             elif self.delivery_status == Order.DeliveryStatusChoice.DELIVERED:
                 self.delivered_at = now()
 

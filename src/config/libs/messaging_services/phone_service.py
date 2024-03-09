@@ -11,7 +11,7 @@ url = "https://api2.ippanel.com/api/v1/sms/pattern/normal/send"
 def send_otp_phone(to, code):
     payload = json.dumps(
         {
-            "code": "2k3wp5r73wans40",
+            "code": "5s7bdcfd1hm6fuv",
             "sender": "+983000505",
             "recipient": str(to),
             "variable": {"code": str(code)},
