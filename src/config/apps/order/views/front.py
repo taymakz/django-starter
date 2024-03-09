@@ -119,7 +119,7 @@ class OrderGetView(APIView):
                     ),
                 )
 
-                orders = Order.objects.prefetch_related(
+                orders = list(Order.objects.prefetch_related(
                     Prefetch(
                         "items",
                         queryset=OrderItem.objects.prefetch_related(
@@ -141,7 +141,7 @@ class OrderGetView(APIView):
                         Order.PaymentStatusChoice.OPEN_ORDER,
                         Order.PaymentStatusChoice.PENDING_PAYMENT,
                     ],
-                )
+                ))
 
                 open_order = next(
                     (
@@ -165,7 +165,7 @@ class OrderGetView(APIView):
                 if not open_order:
                     open_order = Order.objects.create(user=request.user)
 
-                open_order_data = OrderOpenSerializer([open_order]).data
+                open_order_data = OrderOpenSerializer(open_order).data
                 pending_orders_data = OrderPendingSerializer(
                     [pending_orders], many=True
                 ).data
@@ -593,10 +593,10 @@ class OrderGetProfileDataView(APIView):
             )
 
             result = {
-                "all_orders": OrderProfileSerializer([all_orders], many=True).data ,
+                "all_orders": OrderProfileSerializer([all_orders], many=True).data,
                 "current_orders": OrderProfileSerializer([current_orders], many=True).data,
                 "delivered_orders": OrderProfileSerializer([delivered_orders],
-                                                           many=True).data ,
+                                                           many=True).data,
                 "canceled_orders": OrderProfileSerializer([canceled_orders], many=True).data,
             }
             return BaseResponse(
