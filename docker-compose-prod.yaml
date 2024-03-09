@@ -14,8 +14,8 @@ services:
 
     ports:
       - "8000:8000"
-    expose:
-      - "8000"
+
+
     volumes:
       - ./src:/src
       - ./data/web:/vol/web
@@ -24,6 +24,20 @@ services:
     depends_on:
       - db
       - redis
+  nginx:
+    build:
+      context: './nginx'
+      dockerfile: './Dockerfile'
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    expose:
+      - "8000"
+    volumes:
+      - ./nginx:/etc/nginx/conf.d
+    depends_on:
+      - backend
   db:
     container_name: database
     image: postgres:15-alpine
