@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from config.apps.catalog.models import Product
-from config.apps.catalog.serializers.front import ProductAttributeValueSerializer
+from config.apps.catalog.serializers.front import ProductAttributeValueSerializer, ProductClassSerializer
 from config.apps.inventory.serializers.front import StockRecordSerializer
 from config.apps.order.models import (
     OrderItem,
@@ -47,7 +47,7 @@ class OrderItemProductSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
     title_ir = serializers.SerializerMethodField()
     title_en = serializers.SerializerMethodField()
-    track_stock = serializers.SerializerMethodField()
+    product_class = serializers.SerializerMethodField()
     stockrecord = StockRecordSerializer()
     attribute_values = ProductAttributeValueSerializer(many=True)
 
@@ -60,7 +60,7 @@ class OrderItemProductSerializer(serializers.ModelSerializer):
             "image",
             "url",
             "stockrecord",
-            "track_stock",
+            "product_class",
             "attribute_values",
         )
 
@@ -83,11 +83,12 @@ class OrderItemProductSerializer(serializers.ModelSerializer):
         elif obj.structure == Product.ProductTypeChoice.child:
             return obj.parent.title_en
 
-    def get_track_stock(self, obj: Product):
+    def get_product_class(self, obj: Product):
         if obj.structure == Product.ProductTypeChoice.standalone:
-            return obj.product_class.track_stock
+            return ProductClassSerializer(obj.product_class).data
         elif obj.structure == Product.ProductTypeChoice.child:
-            return obj.parent.product_class.track_stock
+
+            return ProductClassSerializer(obj.parent.product_class).data
 
     def get_image(self, obj: Product):
         if obj.structure == Product.ProductTypeChoice.standalone:

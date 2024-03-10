@@ -1,4 +1,3 @@
-from OpenSSL.rand import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Q, Prefetch, Case, When, BooleanField
@@ -378,8 +377,14 @@ class OrderReAddItemView(APIView):
                 if count > 0:
                     is_added = True
                     current_order_total += sale_price
-                    OrderItem.objects.create(order=user_current_order, product=item.product, count=count)
-
+                    order_item_instance, _ = OrderItem.objects.get_or_create(order=user_current_order,
+                                                                             product=item.product)
+                    order_item_instance.count += min(count, item.product.stockrecord.num_stock)
+                    if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock:
+                        order_item_instance.count = min(order_item_instance.count, item.product.stockrecord.num_stock)
+                    elif item.product.structure == Product.ProductTypeChoice.standalone and item.product.product_class.track_stock:
+                        order_item_instance.count = min(order_item_instance.count, item.product.stockrecord.num_stock)
+                    order_item_instance.save()
             if is_added:
                 return BaseResponse(
                     status=status.HTTP_204_NO_CONTENT,
