@@ -10,6 +10,7 @@ urlpatterns = [
         name="order_items_validate_local",
     ),
     path("item/add/", front.OrderAddItemView.as_view(), name="order_item_add"),
+    path("item/re-add/", front.OrderReAddItemView.as_view(), name="order_item_re-add"),
     path(
         "item/increase/",
         front.OrderItemIncreaseView.as_view(),

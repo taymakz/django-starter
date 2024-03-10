@@ -39,6 +39,9 @@ class ResponseMessage(Enum):
 
     # Orders
     ORDER_ADDED_TO_CART_SUCCESSFULLY = "محصول به سبد خرید اضافه شد"
+    ORDER_REACHED_TOTAL_PRICE_LIMIT = "مجموع سبد خرید نمی تواند بیشتر از {limit} تومان باشد"
+    ORDER_RE_ADDED_TO_CART_SUCCESSFULLY = "محصولات به سبد خرید اضافه شد"
+    ORDER_RE_ADDED_TO_CART_FAILED = "هیچکدام از محصولات امکان اضافه شدن ندارند"
     ORDER_ITEM_DOES_NOT_EXIST_MORE_THAN = "بیشتر از {stock} عدد موجود نمی باشد"
     ORDER_ITEM_REACH_MAXIMUM_IN_ORDER_LIMIT = (
         "حداکثر {stock} عدد از این محصول میتواند در سبد خرید باشد"

@@ -1,6 +1,7 @@
+from OpenSSL.rand import status
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, Case, When, BooleanField
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
@@ -256,6 +257,8 @@ class OrderAddItemView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                     message=ResponseMessage.FAILED.value,
                 )
+            max_order_total_price_limit = 50_000_000
+            current_order_total = order.get_total_price()
             # Create or get OrderItem instances and perform count validation
             for item in items_to_add:
                 product_id = item["product_id"]
@@ -264,9 +267,25 @@ class OrderAddItemView(APIView):
                     continue  # Skip if product not valid
 
                 # Get or create OrderItem instance
-                order_item, _ = OrderItem.objects.get_or_create(
+                order_item, _ = OrderItem.objects.select_related('product', 'product__stockrecord').get_or_create(
                     order_id=order_id, product_id=product_id, defaults={"count": count}
                 )
+                if (
+                        (
+                                order_item.product.stockrecord.special_sale_price or
+                                order_item.product.stockrecord.sale_price
+                        ) + current_order_total) > max_order_total_price_limit:
+                    if len(items_to_add) == 1:
+                        return BaseResponse(
+                            status=status.HTTP_400_BAD_REQUEST,
+                            message=ResponseMessage.ORDER_REACHED_TOTAL_PRICE_LIMIT.value.format(
+                                limit=max_order_total_price_limit
+                            ),
+                        )
+
+                    continue
+                else:
+                    current_order_total += order_item.product.stockrecord.special_sale_price or order_item.product.stockrecord.sale_price
 
                 order_item.count += count if not order_item.pk else 0
 
@@ -300,6 +319,81 @@ class OrderAddItemView(APIView):
             )
         except Exception as e:
             print(f"apps.order.views.front line 298 : {e}")
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
+            )
+
+
+class OrderReAddItemView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            order_slug = request.data.get("order_slug", None)
+            order: Order = Order.objects.prefetch_related(
+                Prefetch(
+                    'items', queryset=OrderItem.objects.select_related(
+                        'product',
+                        'product__product_class',
+                        'product__parent__product_class',
+                        'product__stockrecord',
+                    ).annotate(
+                        is_available=Case(
+                            # Case for standalone products
+                            When(
+                                product__structure=Product.ProductTypeChoice.standalone,
+                                product__product_class__track_stock=True,
+                                product__stockrecord__num_stock__gt=0,
+                                then=True,
+                            ),
+                            # Case for child products
+                            When(
+                                product__structure=Product.ProductTypeChoice.child,
+                                product__parent__product_class__track_stock=True,
+                                product__stockrecord__num_stock__gt=0,
+                                then=True,
+                            ),
+                            default=False,
+                            output_field=BooleanField(),
+                        )
+                    ).filter(is_available=True)
+                )
+            ).get(slug=order_slug)
+
+            user_current_order, _ = Order.objects.get_or_create(user=request.user,
+                                                                payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
+            max_order_total_price_limit = 50_000_000
+            current_order_total = user_current_order.get_total_price()
+            is_added = False
+            for item in order.items.all():
+                sale_price = item.product.stockrecord.special_sale_price or item.product.stockrecord.sale_price
+                if (sale_price + current_order_total) > max_order_total_price_limit:
+                    continue
+
+                count = min(item.count,
+                            item.product.stockrecord.num_stock) if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock else min(
+                    item.count, item.product.stockrecord.num_stock)
+
+                if count > 0:
+                    is_added = True
+                    current_order_total += sale_price
+                    OrderItem.objects.create(order=user_current_order, product=item.product, count=count)
+
+            if is_added:
+                return BaseResponse(
+                    status=status.HTTP_204_NO_CONTENT,
+                    message=ResponseMessage.ORDER_RE_ADDED_TO_CART_SUCCESSFULLY.value
+                )
+            else:
+                return BaseResponse(
+                    status=status.HTTP_404_NOT_FOUND,
+                    message=ResponseMessage.ORDER_RE_ADDED_TO_CART_FAILED.value
+                )
+
+
+        except Exception as e:
+            print(f"apps.order.views.front.OrderReAddItemView : {e}")
             return BaseResponse(
                 status=status.HTTP_400_BAD_REQUEST, message=ResponseMessage.FAILED.value
             )

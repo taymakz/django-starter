@@ -188,5 +188,5 @@ class ProductAdmin(admin.ModelAdmin):
 
     def product_title(self, obj: Product):
         if obj.structure == obj.ProductTypeChoice.child:
-            return f"child: {obj.parent.title_en}"
-        return f"P-S: {obj.title_en}"
+            return f"child: {obj.parent.title_ir}"
+        return f"P-S: {obj.title_ir}"
