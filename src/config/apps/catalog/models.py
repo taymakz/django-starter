@@ -4,7 +4,6 @@ from django.core.cache import cache
 from django.db import models
 from treenode.models import TreeNodeModel
 
-from config.apps.order.models import OrderItem, Order
 from config.libs.db.fields import UpperCaseCharField
 from config.libs.db.models import BaseModel
 
@@ -332,7 +331,7 @@ class Product(BaseModel):
             return None
 
     def get_absolute_url(self):
-        return f"/product/{self.short_slug}/{self.slug}/"
+        return f"/product/{self.short_slug}/{self.slug}"
 
 
 class ProductAttributeValue(models.Model):
