@@ -153,11 +153,6 @@ class ProductStockRecordInline(admin.TabularInline):
     extra = 0
 
 
-class ProductChildInline(admin.StackedInline):
-    model = Product
-    extra = 0
-
-
 class ProductPropertyValueInline(admin.TabularInline):
     model = ProductPropertyValue
     extra = 0
@@ -171,7 +166,6 @@ class ProductAdmin(admin.ModelAdmin):
         ProductImageInline,
         ProductRecommendationInline,
         ProductStockRecordInline,
-        ProductChildInline,
     ]
     raw_id_fields = ["parent"]
     prepopulated_fields = {"slug": ("title_en",)}
