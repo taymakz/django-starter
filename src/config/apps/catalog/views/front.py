@@ -289,12 +289,18 @@ class ProductDetailView(APIView):
                             ],
                         )
                         | Q(
+                            Q(
+                                stockrecord__num_stock__gt=0,
+                                parent__product_class__track_stock=True,
+                            )
+                            | Q(parent__product_class__track_stock=False)
+                            ,
                             parent__short_slug=short_slug,
                             structure=Product.ProductTypeChoice.child,
                         )
                     )
                     .select_related(
-                        "stockrecord", "brand", "brand__image", "product_class"
+                        "stockrecord", "brand", "brand__image", "product_class", "parent__product_class"
                     )
                     .prefetch_related(
                         prefetch_recommended_products,
