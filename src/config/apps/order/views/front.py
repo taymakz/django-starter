@@ -330,72 +330,76 @@ class OrderReAddItemView(APIView):
     def post(self, request):
         try:
             order_slug = request.data.get("order_slug", None)
-            order: Order = Order.objects.prefetch_related(
-                Prefetch(
-                    'items', queryset=OrderItem.objects.select_related(
-                        'product',
-                        'product__product_class',
-                        'product__parent__product_class',
-                        'product__stockrecord',
-                    ).annotate(
-                        is_available=Case(
-                            # Case for standalone products
-                            When(
-                                product__structure=Product.ProductTypeChoice.standalone,
-                                product__product_class__track_stock=True,
-                                product__stockrecord__num_stock__gt=0,
-                                then=True,
-                            ),
-                            # Case for child products
-                            When(
-                                product__structure=Product.ProductTypeChoice.child,
-                                product__parent__product_class__track_stock=True,
-                                product__stockrecord__num_stock__gt=0,
-                                then=True,
-                            ),
-                            default=False,
-                            output_field=BooleanField(),
-                        )
-                    ).filter(is_available=True)
-                )
-            ).get(slug=order_slug)
 
-            user_current_order, _ = Order.objects.get_or_create(user=request.user,
-                                                                payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
-            max_order_total_price_limit = 50_000_000
-            current_order_total = user_current_order.get_total_price()
-            is_added = False
-            for item in order.items.all():
-                sale_price = item.product.stockrecord.special_sale_price or item.product.stockrecord.sale_price
-                if (sale_price + current_order_total) > max_order_total_price_limit:
-                    continue
+            with transaction.atomic():
+                order: Order = Order.objects.select_for_update().prefetch_related(
+                    Prefetch(
+                        'items', queryset=OrderItem.objects.select_related(
+                            'product',
+                            'product__product_class',
+                            'product__parent__product_class',
+                            'product__stockrecord',
+                        ).annotate(
+                            is_available=Case(
+                                # Case for standalone products
+                                When(
+                                    product__structure=Product.ProductTypeChoice.standalone,
+                                    product__product_class__track_stock=True,
+                                    product__stockrecord__num_stock__gt=0,
+                                    then=True,
+                                ),
+                                # Case for child products
+                                When(
+                                    product__structure=Product.ProductTypeChoice.child,
+                                    product__parent__product_class__track_stock=True,
+                                    product__stockrecord__num_stock__gt=0,
+                                    then=True,
+                                ),
+                                default=False,
+                                output_field=BooleanField(),
+                            )
+                        ).filter(is_available=True)
+                    )
+                ).get(slug=order_slug)
 
-                count = min(item.count,
-                            item.product.stockrecord.num_stock) if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock else min(
-                    item.count, item.product.stockrecord.num_stock)
+                user_current_order, _ = Order.objects.get_or_create(user=request.user,
+                                                                    payment_status=Order.PaymentStatusChoice.OPEN_ORDER)
+                max_order_total_price_limit = 50_000_000
+                current_order_total = user_current_order.get_total_price()
+                is_added = False
+                for item in order.items.all():
+                    sale_price = item.product.stockrecord.special_sale_price or item.product.stockrecord.sale_price
+                    if (sale_price + current_order_total) > max_order_total_price_limit:
+                        continue
 
-                if count > 0:
-                    is_added = True
-                    current_order_total += sale_price
-                    order_item_instance, _ = OrderItem.objects.get_or_create(order=user_current_order,
-                                                                             product=item.product)
-                    order_item_instance.count += min(count, item.product.stockrecord.num_stock)
-                    if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock:
-                        order_item_instance.count = min(order_item_instance.count, item.product.stockrecord.num_stock)
-                    elif item.product.structure == Product.ProductTypeChoice.standalone and item.product.product_class.track_stock:
-                        order_item_instance.count = min(order_item_instance.count, item.product.stockrecord.num_stock)
-                    order_item_instance.save()
-            if is_added:
-                return BaseResponse(
-                    status=status.HTTP_204_NO_CONTENT,
-                    message=ResponseMessage.ORDER_RE_ADDED_TO_CART_SUCCESSFULLY.value
-                )
-            else:
-                return BaseResponse(
-                    status=status.HTTP_404_NOT_FOUND,
-                    message=ResponseMessage.ORDER_RE_ADDED_TO_CART_FAILED.value
-                )
+                    count = min(item.count,
+                                item.product.stockrecord.num_stock) if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock else min(
+                        item.count, item.product.stockrecord.num_stock)
 
+                    if count > 0:
+                        is_added = True
+                        current_order_total += sale_price
+                        order_item_instance, _ = OrderItem.objects.get_or_create(order=user_current_order,
+                                                                                 product=item.product)
+                        order_item_instance.count += min(count, item.product.stockrecord.num_stock)
+                        if item.product.structure == Product.ProductTypeChoice.child and item.product.parent.product_class.track_stock:
+                            order_item_instance.count = min(order_item_instance.count,
+                                                            item.product.stockrecord.num_stock)
+                        elif item.product.structure == Product.ProductTypeChoice.standalone and item.product.product_class.track_stock:
+                            order_item_instance.count = min(order_item_instance.count,
+                                                            item.product.stockrecord.num_stock)
+                        order_item_instance.save()
+
+                if is_added:
+                    return BaseResponse(
+                        status=status.HTTP_204_NO_CONTENT,
+                        message=ResponseMessage.ORDER_RE_ADDED_TO_CART_SUCCESSFULLY.value
+                    )
+                else:
+                    return BaseResponse(
+                        status=status.HTTP_404_NOT_FOUND,
+                        message=ResponseMessage.ORDER_RE_ADDED_TO_CART_FAILED.value
+                    )
 
         except Exception as e:
             print(f"apps.order.views.front.OrderReAddItemView : {e}")
