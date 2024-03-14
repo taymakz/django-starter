@@ -296,3 +296,12 @@ class UserRecentVisitedProduct(BaseModel):
 
     class Meta:
         db_table = "user_recent_visited_product"
+
+
+class UserVisits(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="visits")
+    ip_address = models.CharField(max_length=45, blank=True, null=True)  # Assuming IPv4 or IPv6
+    url_visited = models.URLField()  # URL visited by the user
+
+    def __str__(self):
+        return f"Visit by {self.user.username if self.user else 'Anonymous'} at {self.created_at}"

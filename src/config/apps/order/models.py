@@ -213,6 +213,7 @@ class OrderItem(models.Model):
     count = models.PositiveSmallIntegerField(default=0)
 
     # Fields that Fill After Payment
+    final_buy_price = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
     final_price = models.PositiveBigIntegerField(null=True, blank=True, editable=False)
     final_price_before_discount = models.PositiveBigIntegerField(
         null=True, blank=True, editable=False
@@ -233,6 +234,9 @@ class OrderItem(models.Model):
 
     def get_total_price(self):
         return self.product.stockrecord.final_price * self.count
+
+    def get_total_buy_price(self):
+        return self.product.stockrecord.buy_price * self.count
 
     def get_total_price_before_discount(self):
         return self.product.stockrecord.sale_price
@@ -255,6 +259,7 @@ class OrderItem(models.Model):
         self.final_price_before_discount = self.get_total_price_before_discount()
         self.final_discount = self.get_total_diff_price()
         self.final_profit = self.get_total_profit()
+        self.final_buy_price = self.get_total_buy_price()
         self.save()
 
 

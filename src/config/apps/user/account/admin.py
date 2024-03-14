@@ -8,7 +8,7 @@ from .models import (
     UserPasswordResetToken,
     UserSearchHistory,
     UserFavoriteProduct,
-    UserRecentVisitedProduct,
+    UserRecentVisitedProduct, UserVisits,
 )
 
 
@@ -129,3 +129,8 @@ class UserPasswordResetTokenAdmin(admin.ModelAdmin):
     @staticmethod
     def is_expired(obj):
         return obj.is_expired()
+
+
+@admin.register(UserVisits)
+class UserVisitsAdmin(admin.ModelAdmin):
+    pass

@@ -4,6 +4,7 @@ from rest_framework_simplejwt import views as jwt_views
 from config.apps.user.account.views import front
 
 urlpatterns = [
+
     path("token/", jwt_views.TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", jwt_views.TokenRefreshView.as_view(), name="token_refresh"),
     path("logout/", front.UserLogoutView.as_view(), name="user_logout"),
@@ -12,6 +13,10 @@ urlpatterns = [
         front.RequestCurrentUserView.as_view(),
         name="user_request_current_detail",
     ),
+
+    path("visit/logged-in/", front.UserVisitLoggedInView.as_view(), name="user_visit_logged_in"),
+    path("visit/anonymous/", front.UserVisitAnonymousView.as_view(), name="user_visit_anonymous"),
+
     # Authenticate
     path(
         "authenticate/check/",

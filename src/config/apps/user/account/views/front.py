@@ -1,5 +1,8 @@
+from datetime import timedelta
+
 from django.db.models import Case, When, BooleanField, Subquery, OuterRef
 from django.utils import timezone
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -21,7 +24,7 @@ from config.apps.user.account.models import (
     UserPasswordResetToken,
     UserFavoriteProduct,
     UserSearchHistory,
-    UserRecentVisitedProduct,
+    UserRecentVisitedProduct, UserVisits,
 )
 from config.apps.user.account.serializers.front import (
     UserSerializer,
@@ -1242,3 +1245,53 @@ class UserEditPassword(APIView):
             status=status.HTTP_200_OK,
             message=ResponseMessage.RESET_PASSWORD_SUCCESSFULLY.value,
         )
+
+
+# TODO: maybe handle these with  Celery
+class UserVisitLoggedInView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, format=None):
+        # Retrieve user and IP address
+        user = request.user
+        ip_address = request.META.get('REMOTE_ADDR', None)
+
+        # Get visited URL from the POST data
+        visited_url = request.data.get('visited_url', None)
+
+        # Check if a visit already exists within the last 2 hours for the user
+        two_hours_ago = now() - timedelta(hours=2)
+        existing_visit = UserVisits.objects.filter(user=user, created_at__gte=two_hours_ago).order_by('-id').first()
+
+        if existing_visit:
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT)
+
+        # Create a new visit instance
+        UserVisits.objects.create(user=user, ip_address=ip_address, url_visited=visited_url)
+
+        return BaseResponse(status=status.HTTP_201_CREATED)
+
+
+class UserVisitAnonymousView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def post(self, request, format=None):
+        # Retrieve IP address
+        ip_address = request.META.get('REMOTE_ADDR', None)
+
+        # Get visited URL from the POST data
+        visited_url = request.data.get('visited_url', None)
+
+        # Check if a visit already exists within the last 2 hours for the user
+        two_hours_ago = now() - timedelta(hours=2)
+        existing_visit = UserVisits.objects.filter(ip_address=ip_address, created_at__gte=two_hours_ago).order_by(
+            '-id').first()
+
+        if existing_visit:
+            return BaseResponse(status=status.HTTP_204_NO_CONTENT)
+
+        # Create a new visit instance
+        UserVisits.objects.create(ip_address=ip_address, url_visited=visited_url)
+
+        return BaseResponse(status=status.HTTP_201_CREATED)
