@@ -278,7 +278,7 @@ class OrderAddItemView(APIView):
                         return BaseResponse(
                             status=status.HTTP_400_BAD_REQUEST,
                             message=ResponseMessage.ORDER_REACHED_TOTAL_PRICE_LIMIT.value.format(
-                                limit=max_order_total_price_limit
+                                limit=f"{max_order_total_price_limit:,}"
                             ),
                         )
 
@@ -418,25 +418,34 @@ class OrderItemIncreaseView(APIView):
             order_item = (
                 OrderItem.objects.select_related(
                     "order", "product", "product__product_class", "product__stockrecord"
-                )
-                .only(
-                    "id",
-                    "count",
-                    "product_id",
-                    "product__stockrecord__num_stock",
-                    "product__stockrecord__in_order_limit",
-                    "product__product_class__track_stock",
-                    "order__user",
-                    "order__payment_status",
-                    "order__lock",
-                )
-                .get(
+                ).get(
                     product_id=product_id,
                     order__user=self.request.user,
                     order__payment_status=Order.PaymentStatusChoice.OPEN_ORDER,
                     order__lock=False,
                 )
             )
+            max_order_total_price_limit = 50_000_000
+            current_order = Order.objects.prefetch_related(Prefetch('items',
+                                                                    queryset=OrderItem.objects.select_related(
+                                                                        "product",
+                                                                        "product__product_class",
+                                                                        "product__stockrecord"))).get(
+                id=order_item.order.id)
+            current_order_total = current_order.get_total_price()
+
+            # Calculate the potential new total price if the count is increased
+            new_total_price = current_order_total + (
+                    order_item.product.stockrecord.special_sale_price or order_item.product.stockrecord.sale_price)
+
+            # Check if increasing the count would exceed the maximum order total price limit
+            if new_total_price > max_order_total_price_limit:
+                return BaseResponse(
+                    status=status.HTTP_400_BAD_REQUEST,
+                    message=ResponseMessage.ORDER_REACHED_TOTAL_PRICE_LIMIT.value.format(
+                        limit=f"{max_order_total_price_limit:,}"
+                    ),
+                )
             max_allowed_count = order_item.product.stockrecord.in_order_limit
             if max_allowed_count is None:
                 max_allowed_count = float("inf")
