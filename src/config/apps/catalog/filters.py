@@ -1,9 +1,10 @@
-from django.db.models import Q, Case, When, IntegerField, F
+from django.db.models import Q, Case, When, IntegerField, F, Sum
 from django.db.models.functions import Now
 from django.utils.timezone import now
 from django_filters import rest_framework as filters
 
 from config.apps.catalog.models import Product
+from config.apps.order.models import Order
 
 
 class ProductFilter(filters.FilterSet):
@@ -102,10 +103,19 @@ class ProductFilter(filters.FilterSet):
     def filter_sort(self, queryset, name, value):
         if value == 1:  # Newest
             return queryset.order_by("-created_at")
-        elif value == 2:  # Sale
-            return queryset.filter(
-                stockrecord__special_sale_price__isnull=False
-            ).order_by("-stockrecord__special_sale_price")
+        elif value == 2:  # Most Sale
+            return queryset.annotate(
+                total_sales=Sum(
+                    Case(
+                        When(
+                            in_baskets__order__payment_status=Order.PaymentStatusChoice.PAID,
+                            then=F('in_baskets__count')
+                        ),
+                        default=0,
+                        output_field=IntegerField(),
+                    )
+                )
+            ).order_by("-total_sales")
         elif value == 3:  # Expensive
             return queryset.annotate(
                 price=Case(

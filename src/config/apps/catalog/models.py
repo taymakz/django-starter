@@ -433,3 +433,13 @@ class ProductComment(BaseModel):
 
     def __str__(self):
         return f"{self.user} on {self.product.title_en} suggest : {self.get_suggestion_display()} : {self.comment[:50]}"
+
+
+class ProductVisits(BaseModel):
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True, blank=True, related_name="visits")
+    user = models.ForeignKey('account.User', on_delete=models.SET_NULL, null=True, blank=True,
+                             related_name="product_visits")
+    ip_address = models.CharField(max_length=45, blank=True, null=True)  # Assuming IPv4 or IPv6
+
+    def __str__(self):
+        return f"Visit by {self.user.username if self.user else 'Anonymous'} at {self.created_at}"

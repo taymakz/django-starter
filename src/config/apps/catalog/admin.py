@@ -17,7 +17,7 @@ from config.apps.catalog.models import (
     OptionGroup,
     ProductProperty,
     ProductPropertyValue,
-    ProductComment,
+    ProductComment, ProductVisits,
 )
 from config.apps.inventory.models import StockRecord
 
@@ -184,3 +184,8 @@ class ProductAdmin(admin.ModelAdmin):
         if obj.structure == obj.ProductTypeChoice.child:
             return f"child: {obj.parent.title_ir}"
         return f"P-S: {obj.title_ir}"
+
+
+@admin.register(ProductVisits)
+class ProductVisitsAdmin(admin.ModelAdmin):
+    pass
