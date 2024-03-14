@@ -79,49 +79,59 @@ class StockRecord(models.Model):
 
         cache.delete("cached_brand_products")
         super().save(*args, **kwargs)
-        if self.product.structure == self.product.ProductTypeChoice.child:
-            parent_product = self.product.parent
-            if parent_product:
-                # Fetch all child products with valid stock records
-                valid_children = parent_product.children.filter(
-                    Q(stockrecord__num_stock__gt=0,
-                      parent__product_class__track_stock=True) |
-                    Q(parent__product_class__track_stock=False),
-                    is_public=True,
-                ).select_related("parent__stockrecord")
-                print([child.parent.stockrecord.sale_price for child in valid_children])
+        try:
+            if self.product.structure == self.product.ProductTypeChoice.child:
+                parent_product = self.product.parent
+                if parent_product:
+                    # Fetch all child products with valid stock records
+                    valid_children = parent_product.children.filter(
+                        Q(stockrecord__num_stock__gt=0,
+                          parent__product_class__track_stock=True) |
+                        Q(parent__product_class__track_stock=False),
+                        is_public=True,
+                    ).select_related("parent__stockrecord")
 
-                if valid_children.exists():
-                    # Find the minimum sale price among child products
-                    min_sale_price = min(child.stockrecord.sale_price for child in valid_children)
+                    if valid_children.exists():
+                        # Find the minimum sale price among child products
+                        min_sale_price = min(child.stockrecord.sale_price for child in valid_children)
 
-                    # Find the minimum special sale price among child products
-                    min_special_price = min(
-                        child.stockrecord.special_sale_price or float('inf') for child in valid_children)
-                    min_start_date = min(child.stockrecord.special_sale_price_start_at for child in valid_children)
-                    max_end_date = max(child.stockrecord.special_sale_price_end_at for child in valid_children)
+                        # Find the minimum special sale price among child products
+                        min_special_price = min(
+                            child.stockrecord.special_sale_price or float('inf') for child in valid_children)
+                        # Filter out None values before finding min/max dates
+                        valid_dates = [child.stockrecord.special_sale_price_start_at for child in valid_children
+                                       if child.stockrecord.special_sale_price_start_at is not None]
 
-                    # Update parent product's stock record with aggregated values
-                    parent_stock_record, _ = StockRecord.objects.update_or_create(
-                        product=parent_product,
-                        defaults={
-                            "sale_price": min_sale_price,
-                            "special_sale_price": min_special_price if min_special_price != float('inf') else None,
-                            "special_sale_price_start_at": min_start_date,
-                            "special_sale_price_end_at": max_end_date,
-                            "num_stock": min(child.stockrecord.num_stock for child in valid_children),
-                        },
-                    )
-                else:
-                    # If no valid child products, reset parent's stock record
-                    defaults = {
-                        "sale_price": self.sale_price,
-                        "special_sale_price": None,
-                        "special_sale_price_start_at": None,
-                        "special_sale_price_end_at": None,
-                        "num_stock": self.num_stock,
-                    }
-                    StockRecord.objects.update_or_create(product=parent_product, defaults=defaults)
+                        min_start_date = min(valid_dates) if valid_dates else None
+
+                        valid_dates = [child.stockrecord.special_sale_price_end_at for child in valid_children
+                                       if child.stockrecord.special_sale_price_end_at is not None]
+
+                        max_end_date = max(valid_dates) if valid_dates else None
+
+                        # Update parent product's stock record with aggregated values
+                        parent_stock_record, _ = StockRecord.objects.update_or_create(
+                            product=parent_product,
+                            defaults={
+                                "sale_price": min_sale_price,
+                                "special_sale_price": min_special_price if min_special_price != float('inf') else None,
+                                "special_sale_price_start_at": min_start_date,
+                                "special_sale_price_end_at": max_end_date,
+                                "num_stock": min(child.stockrecord.num_stock for child in valid_children),
+                            },
+                        )
+                    else:
+                        # If no valid child products, reset parent's stock record
+                        defaults = {
+                            "sale_price": self.sale_price,
+                            "special_sale_price": None,
+                            "special_sale_price_start_at": None,
+                            "special_sale_price_end_at": None,
+                            "num_stock": self.num_stock,
+                        }
+                        StockRecord.objects.update_or_create(product=parent_product, defaults=defaults)
+        except Exception as e:
+            print(e)
 
     @property
     def has_special_price_with_date(self) -> bool:

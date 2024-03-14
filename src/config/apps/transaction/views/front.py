@@ -248,6 +248,7 @@ class TransactionRequest(APIView):
             current_order.final_shipping_effect_price = order_shipping_effect_price
             current_order.ordered_at = now()
             current_order.delivery_status_modified_at = now()
+
             for item in current_order.items.all():
                 # child Product
                 if item.product.structure == Product.ProductTypeChoice.child:
@@ -260,7 +261,6 @@ class TransactionRequest(APIView):
                         item.product.stockrecord.num_stock -= item.count
                         item.product.stockrecord.save()
                 item.set_final_price()
-
             Transaction.objects.create(
                 user=user,
                 order=current_order,
