@@ -1,8 +1,5 @@
-from datetime import timedelta
-
 from django.db.models import Case, When, BooleanField, Subquery, OuterRef
 from django.utils import timezone
-from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.generics import RetrieveAPIView, UpdateAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -24,8 +21,7 @@ from config.apps.user.account.models import (
     UserPasswordResetToken,
     UserFavoriteProduct,
     UserSearchHistory,
-    UserRecentVisitedProduct, UserVisits,
-)
+    UserRecentVisitedProduct, )
 from config.apps.user.account.serializers.front import (
     UserSerializer,
     UserLogoutSerializer,
@@ -37,6 +33,7 @@ from config.apps.user.account.serializers.front import (
     UserForgotPasswordResetSerializer,
     UserEditProfileSerializer,
 )
+from config.apps.user.account.tasks import add_user_visit_celery
 from config.libs.validator.validators import (
     validate_username,
     validate_password,
@@ -1247,7 +1244,6 @@ class UserEditPassword(APIView):
         )
 
 
-# TODO: maybe handle these with  Celery
 class UserVisitLoggedInView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1258,17 +1254,14 @@ class UserVisitLoggedInView(APIView):
 
         # Get visited URL from the POST data
         visited_url = request.data.get('visited_url', None)
+        if not visited_url:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+        add_user_visit_celery.apply_async(kwargs={
+            'visited_url': visited_url,
+            'ip_address': ip_address,
+            'user_id': user.id,
 
-        # Check if a visit already exists within the last 2 hours for the user
-        two_hours_ago = now() - timedelta(hours=2)
-        existing_visit = UserVisits.objects.filter(user=user, created_at__gte=two_hours_ago).order_by('-id').first()
-
-        if existing_visit:
-            return BaseResponse(status=status.HTTP_204_NO_CONTENT)
-
-        # Create a new visit instance
-        UserVisits.objects.create(user=user, ip_address=ip_address, url_visited=visited_url)
-
+        }, priority=1)
         return BaseResponse(status=status.HTTP_201_CREATED)
 
 
@@ -1282,16 +1275,11 @@ class UserVisitAnonymousView(APIView):
 
         # Get visited URL from the POST data
         visited_url = request.data.get('visited_url', None)
+        if not visited_url:
+            return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+        add_user_visit_celery.apply_async(kwargs={
+            'visited_url': visited_url,
+            'ip_address': ip_address,
 
-        # Check if a visit already exists within the last 2 hours for the user
-        two_hours_ago = now() - timedelta(hours=2)
-        existing_visit = UserVisits.objects.filter(ip_address=ip_address, created_at__gte=two_hours_ago).order_by(
-            '-id').first()
-
-        if existing_visit:
-            return BaseResponse(status=status.HTTP_204_NO_CONTENT)
-
-        # Create a new visit instance
-        UserVisits.objects.create(ip_address=ip_address, url_visited=visited_url)
-
+        }, priority=1)
         return BaseResponse(status=status.HTTP_201_CREATED)
