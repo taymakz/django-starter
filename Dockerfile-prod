@@ -39,4 +39,3 @@ ENV PATH="/scripts:/py/bin:$PATH"
 
 USER taymaz
 
-CMD ["run.sh"]

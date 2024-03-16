@@ -61,7 +61,6 @@ EXTERNAL_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "imagekit",
     "treenode",
-    "jalali_date",
 ]
 INTERNAL_APPS = [
     "config.api",
