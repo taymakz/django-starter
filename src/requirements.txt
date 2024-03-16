@@ -11,10 +11,10 @@ Pillow
 celery
 redis
 django-redis
+pika
 django-treenode
 django-storages
 boto3
-django-jalali-date==1.1.0
 django-imagekit
 requests
 gunicorn
