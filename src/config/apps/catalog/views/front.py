@@ -1,5 +1,3 @@
-from datetime import timedelta
-
 from django.core.cache import cache
 from django.db.models import (
     Subquery,
@@ -11,7 +9,6 @@ from django.db.models import (
     When,
     Exists,
 )
-from django.utils.timezone import now
 from rest_framework import status
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -28,8 +25,7 @@ from config.apps.catalog.models import (
     ProductAttributeValue,
     ProductPropertyValue,
     OptionGroupValue,
-    ProductComment, Brand, ProductVisits,
-)
+    ProductComment, Brand, )
 from config.apps.catalog.serializers.front import (
     ProductCardSerializer,
     SearchFilterOptionSerializer,
@@ -40,6 +36,7 @@ from config.apps.catalog.serializers.front import (
     ProductCommentCreateSerializer, CatalogSearchSerializer, CatalogSearchProductSerializer,
     CatalogSearchBrandSerializer,
 )
+from config.apps.catalog.tasks import add_product_visit_celery
 from config.apps.order.models import OrderItem, Order
 
 
@@ -439,7 +436,6 @@ class ProductCommentCreateAPIView(ListAPIView):
         )
 
 
-# TODO: maybe handle these with  Celery
 class ProductVisitLoggedInView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -451,18 +447,14 @@ class ProductVisitLoggedInView(APIView):
 
             # Get visited URL from the POST data
             product_slug = request.data.get('product_slug', None)
-            product = Product.objects.get(short_slug=product_slug)
-            # Check if a visit already exists within the last 2 hours for the user
-            two_hours_ago = now() - timedelta(hours=2)
-            existing_visit = ProductVisits.objects.filter(user=user, product=product,
-                                                          created_at__gte=two_hours_ago).order_by('-id').first()
+            if not product_slug:
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+            add_product_visit_celery.apply_async(kwargs={
+                'product_slug': product_slug,
+                'ip_address': ip_address,
+                'user_id': user.id,
 
-            if existing_visit:
-                return BaseResponse(status=status.HTTP_204_NO_CONTENT)
-
-            # Create a new visit instance
-            ProductVisits.objects.create(user=user, ip_address=ip_address, product=product)
-
+            }, priority=1)
             return BaseResponse(status=status.HTTP_201_CREATED)
         except Exception as e:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
@@ -479,20 +471,13 @@ class ProductVisitAnonymousView(APIView):
 
             # Get visited URL from the POST data
             product_slug = request.data.get('product_slug', None)
-            product = Product.objects.get(short_slug=product_slug)
+            if not product_slug:
+                return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
+            add_product_visit_celery.apply_async(kwargs={
+                'product_slug': product_slug,
+                'ip_address': ip_address,
 
-            # Check if a visit already exists within the last 2 hours for the user
-            two_hours_ago = now() - timedelta(hours=2)
-            existing_visit = ProductVisits.objects.filter(product=product, ip_address=ip_address,
-                                                          created_at__gte=two_hours_ago).order_by(
-                '-id').first()
-
-            if existing_visit:
-                return BaseResponse(status=status.HTTP_204_NO_CONTENT)
-
-            # Create a new visit instance
-            ProductVisits.objects.create(product=product, ip_address=ip_address)
-
+            }, priority=1)
             return BaseResponse(status=status.HTTP_201_CREATED)
         except Exception as e:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
