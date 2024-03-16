@@ -6,11 +6,8 @@ from config.libs.messaging_services.email_service import send_otp_email
 from config.libs.messaging_services.phone_service import send_otp_phone
 
 
-# Todo : add is Sended Field to Model,
-
-
 @shared_task(name="verification_send_otp_celery")
-def send_otp_celery(to, code, type):
+def send_otp_celery(to, code, type, queue='celery:0'):
     if type == VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE:
         result = send_otp_phone(to=to, code=code)
         try:
@@ -34,5 +31,5 @@ def send_otp_celery(to, code, type):
 
 
 @shared_task(name="verification_delete_expired_otp_celery")
-def delete_expired_otp_celery():
+def delete_expired_otp_celery(queue='celery:3'):
     call_command("delete_expired_otp")

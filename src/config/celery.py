@@ -15,4 +15,9 @@ app.conf.beat_schedule = {
     }
 }
 
+app.conf.broker_transport_options = {
+    'priority_steps': list(range(10)),
+    'sep': ':',
+    'queue_order_strategy': 'priority',
+}
 app.autodiscover_tasks()
