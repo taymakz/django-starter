@@ -11,6 +11,7 @@ Pillow
 celery
 redis
 django-redis
+pika
 django-treenode
 django-storages
 boto3

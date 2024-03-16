@@ -24,6 +24,7 @@ services:
     depends_on:
       - db
       - redis
+      - rabbitmq
   db:
     container_name: database
     image: postgres:15-alpine
@@ -38,18 +39,24 @@ services:
   redis:
     container_name: redis
     image: redis:alpine
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:alpine
+    ports:
+      - "5672:5672"
   celery:
     container_name: celery
     restart: always
     build:
       context: .
-    command: celery -A config worker -l INFO -Q celery,celery:1,celery:2,celery:3
+    command: celery -A config worker -l INFO -Q tasks
     volumes:
       - ./src:/src
     env_file:
       - ./.env
     depends_on:
       - backend
+      - rabbitmq
   celery-beat:
     container_name: celery_beat
     command: celery -A config beat -l info

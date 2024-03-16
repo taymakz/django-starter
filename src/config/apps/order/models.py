@@ -134,11 +134,14 @@ class Order(BaseModel):
         super().save(*args, **kwargs)
 
     def send_order_status_notification(self, pattern):
-        send_order_status_celery.delay(
-            to=self.user.phone,
-            pattern=pattern,
-            number=self.slug,
-            track_code=self.tracking_code,
+        send_order_status_celery.apply_async(
+            kwargs={
+                "to": self.user.phone,
+                "pattern": pattern,
+                "number": self.slug,
+                "track_code": self.tracking_code,
+            },
+            priority=9
         )
 
     def get_absolute_url(self):
