@@ -12,16 +12,16 @@ class UserAddresses(BaseModel):
         null=True,
         blank=True,
     )
-    receiver_name = models.CharField(max_length=55)
-    receiver_family = models.CharField(max_length=55)
+    receiver_name = models.CharField(max_length=20)
+    receiver_family = models.CharField(max_length=20)
     receiver_phone = models.CharField(max_length=11)
     receiver_national_code = models.CharField(max_length=12)
-    receiver_province = models.CharField(max_length=100, choices=province.province)
-    receiver_city = models.CharField(max_length=100, choices=cities.cities)
-    receiver_postal_code = models.CharField(max_length=10)
-    receiver_building_number = models.CharField(max_length=10)
-    receiver_unit = models.CharField(max_length=10)
+    receiver_province = models.CharField(max_length=50, choices=province.province)
+    receiver_city = models.CharField(max_length=50, choices=cities.cities)
     receiver_address = models.TextField(max_length=100)
+    receiver_postal_code = models.CharField(max_length=10, null=True, blank=True)
+    receiver_building_number = models.CharField(max_length=10, null=True, blank=True)
+    receiver_unit = models.CharField(max_length=4, null=True, blank=True)
 
     class Meta:
         db_table = "users_addresses"

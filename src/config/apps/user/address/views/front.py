@@ -39,7 +39,7 @@ class UserAddressAPIView(APIView):
             )
         return BaseResponse(
             status=status.HTTP_400_BAD_REQUEST,
-            message=serializer.errors,
+            message=ResponseMessage.FAILED.value,
         )
 
     def put(self, request):
@@ -60,6 +60,12 @@ class UserAddressAPIView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
                 message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
             )
+        except Exception as e:
+            print(e)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
+            )
 
     def delete(self, request):
         try:
@@ -74,4 +80,10 @@ class UserAddressAPIView(APIView):
             return BaseResponse(
                 status=status.HTTP_404_NOT_FOUND,
                 message=ResponseMessage.USER_PANEL_ADDRESS_NOT_FOUND.value,
+            )
+        except Exception as e:
+            print(e)
+            return BaseResponse(
+                status=status.HTTP_400_BAD_REQUEST,
+                message=ResponseMessage.FAILED.value,
             )

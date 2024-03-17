@@ -62,8 +62,8 @@ class User(BaseModel, AbstractUser):
     email = models.EmailField(unique=True, blank=True, null=True)
     phone = models.CharField(unique=True, max_length=11, blank=True, null=True)
     national_code = models.CharField(max_length=10, null=True, blank=True)
-    first_name = models.CharField(_("first name"), max_length=150, blank=True)
-    last_name = models.CharField(_("last name"), max_length=150, blank=True)
+    first_name = models.CharField(_("first name"), max_length=25, blank=True)
+    last_name = models.CharField(_("last name"), max_length=25, blank=True)
     is_verify = models.BooleanField(default=False)
 
     objects = UserManager()
