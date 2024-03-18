@@ -7,7 +7,7 @@ from django.db.models import (
     BooleanField,
     Case,
     When,
-    Exists,
+    Exists, Count,
 )
 from rest_framework import status
 from rest_framework.generics import ListAPIView
@@ -307,7 +307,8 @@ class ProductDetailView(APIView):
                         prefetch_images,
                         prefetch_attributes,
                         prefetch_properties,
-                    )
+                        'comments'
+                    ).annotate(comment_count=Count('comments'))
                 )
 
                 parent_product = next(
@@ -349,7 +350,8 @@ class ProductDetailView(APIView):
                     prefetch_images,
                     prefetch_attributes,
                     prefetch_properties,
-                )
+                    'comments'
+                ).annotate(comment_count=Count('comments'))
                 .get(
                     short_slug=short_slug,
                     structure=Product.ProductTypeChoice.standalone,

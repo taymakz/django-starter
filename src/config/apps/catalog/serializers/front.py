@@ -272,6 +272,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
     description = serializers.SerializerMethodField()
     url = serializers.CharField(source="get_absolute_url")
     recommended_products = ProductCardSerializer(many=True)
+    comment_count = serializers.IntegerField()
 
     class Meta:
         model = Product
@@ -293,6 +294,7 @@ class ProductDetailSerializer(serializers.ModelSerializer):
             "meta_description",
             "properties",
             "recommended_products",
+            "comment_count"
         )
 
     def to_representation(self, instance):
