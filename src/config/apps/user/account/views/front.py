@@ -1058,20 +1058,27 @@ class UserEditPhoneConfirmView(APIView):
             )
 
         otp_service.delete()
+        has_previous_phone = False
+        if user.phone:
+            has_previous_phone = True
         user.phone = phone
-        user.revoke_all_tokens()
         user.save()
+        if has_previous_phone:
+            user.revoke_all_tokens()
+            # Generate JWT token for the user
+            refresh_token = RefreshToken.for_user(user)
+            access_token = refresh_token.access_token
 
-        # Generate JWT token for the user
-        refresh_token = RefreshToken.for_user(user)
-        access_token = refresh_token.access_token
-
-        user_token = {
-            "access": str(access_token),
-            "refresh": str(refresh_token),
-        }
+            user_token = {
+                "access": str(access_token),
+                "refresh": str(refresh_token),
+            }
+            return BaseResponse(
+                data=user_token,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value,
+            )
         return BaseResponse(
-            data=user_token,
             status=status.HTTP_200_OK,
             message=ResponseMessage.SUCCESS.value,
         )
@@ -1177,20 +1184,30 @@ class UserEditEmailConfirmView(APIView):
             )
 
         otp_service.delete()
+
+        has_previous_email = False
+        if user.email:
+            has_previous_email = True
+
         user.email = email
-        user.revoke_all_tokens()
         user.save()
 
-        # Generate JWT token for the user
-        refresh_token = RefreshToken.for_user(user)
-        access_token = refresh_token.access_token
+        if has_previous_email:
+            user.revoke_all_tokens()
+            # Generate JWT token for the user
+            refresh_token = RefreshToken.for_user(user)
+            access_token = refresh_token.access_token
 
-        user_token = {
-            "access": str(access_token),
-            "refresh": str(refresh_token),
-        }
+            user_token = {
+                "access": str(access_token),
+                "refresh": str(refresh_token),
+            }
+            return BaseResponse(
+                data=user_token,
+                status=status.HTTP_200_OK,
+                message=ResponseMessage.SUCCESS.value,
+            )
         return BaseResponse(
-            data=user_token,
             status=status.HTTP_200_OK,
             message=ResponseMessage.SUCCESS.value,
         )

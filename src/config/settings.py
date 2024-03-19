@@ -125,7 +125,7 @@ if not PRODUCTION:
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        'DIRS': [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -281,3 +281,11 @@ CELERY_TIMEZONE = "Asia/Tehran"
 CELERY_ENABLE_UTC = False
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = 'json'
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.c1.liara.email'
+EMAIL_PORT = 587
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
+EMAIL_HOST_FROM_ADDRESS = os.environ.get("EMAIL_HOST_FROM_ADDRESS")
+EMAIL_USE_TLS = True
