@@ -2,6 +2,8 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -155,16 +157,20 @@ if os.environ.get("DB_LOCAL") == "True":
         }
     }
 else:
+
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME"),
-            "USER": os.environ.get("DB_USER"),
-            "PASSWORD": os.environ.get("DB_PASSWORD"),
-            "HOST": os.environ.get("DB_HOST"),
-            "PORT": os.environ.get("DB_PORT"),
-        }
+        'default': dj_database_url.config(default=os.environ.get("DB_URL"))
     }
+    # DATABASES = {
+    #     "default": {
+    #         "ENGINE": "django.db.backends.postgresql",
+    #         "NAME": os.environ.get("DB_NAME"),
+    #         "USER": os.environ.get("DB_USER"),
+    #         "PASSWORD": os.environ.get("DB_PASSWORD"),
+    #         "HOST": os.environ.get("DB_HOST"),
+    #         "PORT": os.environ.get("DB_PORT"),
+    #     }
+    # }
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
