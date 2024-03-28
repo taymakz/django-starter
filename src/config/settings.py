@@ -140,37 +140,19 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
-ASGI_APPLICATION = "config.asgi.application"
+WSGI_APPLICATION = "config.wsgi.app"
+ASGI_APPLICATION = "config.asgi.app"
 
 # For Export
 #  PYTHONIOENCODING=utf-8 python manage.py dumpdata > data.json
 if os.environ.get("DB_LOCAL") == "True":
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DB_NAME_LOCAL"),
-            "USER": os.environ.get("DB_USER_LOCAL"),
-            "PASSWORD": os.environ.get("DB_PASSWORD_LOCAL"),
-            "HOST": os.environ.get("DB_HOST_LOCAL"),
-            "PORT": os.environ.get("DB_PORT_LOCAL"),
-        }
+        'default': dj_database_url.config(default=os.environ.get("DB_URL_LOCAL"))
     }
 else:
-
     DATABASES = {
         'default': dj_database_url.config(default=os.environ.get("DB_URL"))
     }
-    # DATABASES = {
-    #     "default": {
-    #         "ENGINE": "django.db.backends.postgresql",
-    #         "NAME": os.environ.get("DB_NAME"),
-    #         "USER": os.environ.get("DB_USER"),
-    #         "PASSWORD": os.environ.get("DB_PASSWORD"),
-    #         "HOST": os.environ.get("DB_HOST"),
-    #         "PORT": os.environ.get("DB_PORT"),
-    #     }
-    # }
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",

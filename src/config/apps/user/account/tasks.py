@@ -1,12 +1,12 @@
 from datetime import timedelta
 
-from celery import shared_task
+# from celery import shared_task
 from django.utils.timezone import now
 
 from config.apps.user.account.models import User, UserVisits
 
 
-@shared_task(name="add_user_visit_celery", queue="tasks")
+# @shared_task(name="add_user_visit_celery", queue="tasks")
 def add_user_visit_celery(visited_url, ip_address, user_id=None):
     try:
         if user_id:

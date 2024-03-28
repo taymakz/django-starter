@@ -1,4 +1,4 @@
-from celery import shared_task
+# from celery import shared_task
 from django.core.management import call_command
 
 from config.apps.messages.verification.models import VerifyOTPService
@@ -6,7 +6,7 @@ from config.libs.messaging_services.email_service import send_otp_email
 from config.libs.messaging_services.phone_service import send_otp_phone
 
 
-@shared_task(name="verification_send_otp_celery", queue="tasks")
+# @shared_task(name="verification_send_otp_celery", queue="tasks")
 def send_otp_celery(to, code, type):
     if type == VerifyOTPService.VerifyOTPServiceTypeChoice.PHONE:
         result = send_otp_phone(to=to, code=code)
@@ -42,6 +42,6 @@ def send_otp_celery(to, code, type):
             instance.save()
 
 
-@shared_task(name="verification_delete_expired_otp_celery", queue="tasks")
+# @shared_task(name="verification_delete_expired_otp_celery", queue="tasks")
 def delete_expired_otp_celery():
     call_command("delete_expired_otp")
