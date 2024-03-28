@@ -1,21 +1,18 @@
-Django==5.0.1
+Django==4.2.11
 djangorestframework
 djangorestframework-simplejwt
 django-cors-headers
 django-filter
-psycopg
+psycopg2-binary
 # env controls
 python-dotenv
-
+dj-database-url
 Pillow
-celery
-redis
-django-redis
-pika
 django-treenode
 django-storages
 boto3
 django-imagekit
 requests
-gunicorn
 markdown
+
+
