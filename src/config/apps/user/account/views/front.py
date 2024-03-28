@@ -113,6 +113,7 @@ class UserLogoutView(APIView):
 # User Authentication Check , Required Data : phone or email
 # Check username and base on username type redirect to Correct Section
 class UserAuthenticationCheckView(APIView):
+    throttle_scope = '5perminute'
     authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = UserAuthenticationCheckSerializer
@@ -404,6 +405,8 @@ class UserOTPAuthenticationView(APIView):
 
 # User ForgotPassword Check  , Required Data : Username (email or phone)
 class UserForgotPasswordCheckView(APIView):
+    throttle_scope = '5perminute'
+
     authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = UserForgotPasswordCheckSerializer
@@ -1273,12 +1276,17 @@ class UserVisitLoggedInView(APIView):
         visited_url = request.data.get('visited_url', None)
         if not visited_url:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
-        add_user_visit_celery.apply_async(kwargs={
-            'visited_url': visited_url,
-            'ip_address': ip_address,
-            'user_id': user.id,
-
-        }, priority=1)
+        # add_user_visit_celery.apply_async(kwargs={
+        #     'visited_url': visited_url,
+        #     'ip_address': ip_address,
+        #     'user_id': user.id,
+        #
+        # }, priority=1)
+        add_user_visit_celery(
+            visited_url,
+            ip_address,
+            user.id
+        )
         return BaseResponse(status=status.HTTP_201_CREATED)
 
 
@@ -1294,9 +1302,14 @@ class UserVisitAnonymousView(APIView):
         visited_url = request.data.get('visited_url', None)
         if not visited_url:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
-        add_user_visit_celery.apply_async(kwargs={
-            'visited_url': visited_url,
-            'ip_address': ip_address,
+        # add_user_visit_celery.apply_async(kwargs={
+        #     'visited_url': visited_url,
+        #     'ip_address': ip_address,
+        #
+        # }, priority=1)
 
-        }, priority=1)
+        add_user_visit_celery(
+            visited_url,
+            ip_address
+        )
         return BaseResponse(status=status.HTTP_201_CREATED)

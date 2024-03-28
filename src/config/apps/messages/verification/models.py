@@ -46,4 +46,5 @@ class VerifyOTPService(models.Model):
     def send_otp(self):
         if not self.is_expired():
             from config.apps.messages.verification import tasks
-            tasks.send_otp_celery.apply_async(kwargs={"to": self.to, "code": self.code, "type": self.type}, priority=10)
+            tasks.send_otp_celery(self.to, self.code, self.type)
+            # tasks.send_otp_celery.apply_async(kwargs={"to": self.to, "code": self.code, "type": self.type}, priority=10)

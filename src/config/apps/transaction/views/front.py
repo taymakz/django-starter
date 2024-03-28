@@ -3,6 +3,7 @@ from datetime import timedelta
 
 import requests
 from django.conf import settings
+from django.db import transaction as db_transaction
 from django.db.models import Prefetch
 from django.shortcuts import redirect
 from django.utils.timezone import now
@@ -62,6 +63,7 @@ class TransactionResult(APIView):
 
 
 class TransactionRequest(APIView):
+    throttle_scope = '2perminute'
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -380,6 +382,8 @@ class TransactionRequest(APIView):
 
 
 class TransactionRePaymentRequest(APIView):
+    throttle_scope = '2perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -523,20 +527,26 @@ class TransactionVerify(APIView):
         transaction_number = request.GET.get("tn")
 
         try:
-            current_order: Order = Order.objects.prefetch_related(
-                Prefetch(
-                    "items",
-                    queryset=OrderItem.objects.select_related(
-                        "product",
-                        "product__product_class",
-                        "product__parent__product_class",
-                        "product__stockrecord",
-                    ).all(),
+            with db_transaction.atomic():
+                current_order: Order = Order.objects.select_for_update().prefetch_related(
+                    Prefetch(
+                        "items",
+                        queryset=OrderItem.objects.select_related(
+                            "product",
+                            "product__product_class",
+                            "product__parent__product_class",
+                            "product__stockrecord",
+                        ).all(),
+                    )
+                ).get(slug=order_slug, verified_payment=False)
+
+                transaction = Transaction.objects.get(
+                    transaction_number=transaction_number, order=current_order
                 )
-            ).get(slug=order_slug)
-            transaction = Transaction.objects.get(
-                transaction_number=transaction_number, order=current_order
-            )
+
+                current_order.verified_payment = True
+                current_order.save()
+
         except Order.DoesNotExist:
             return redirect(
                 f"{settings.FRONTEND_URL}?m={ResponseMessage.FAILED.value}"

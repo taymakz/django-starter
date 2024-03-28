@@ -13,6 +13,7 @@ from config.libs.validator.validators import validate_phone, validate_email
 
 
 class VerificationRequestOTPView(APIView):
+    throttle_scope = '2perminute'
     authentication_classes = []
     permission_classes = [AllowAny]
     serializer_class = VerificationRequestOTPSerializer

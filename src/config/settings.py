@@ -212,14 +212,6 @@ else:
     MEDIA_URL = f"{AWS_URL}/media/"
     STATIC_URL = f"{AWS_URL}/static/"
 
-CACHES = {
-    "default": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": os.environ.get("REDIS_URL"),
-        "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
-    },
-}
-
 REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PERMISSION_CLASSES": [
@@ -231,6 +223,18 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "config.api.response.PaginationApiResponse",
     "PAGE_SIZE": 20,
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        '1perminute': '1/min',
+        '2perminute': '2/min',
+        '5perminute': '5/min',
+        '10perminute': '10/min',
+        '20perminute': '20/min',
+        '30perminute': '30/min',
+        '2perhours': '2/hours',
+    }
 }
 
 SPECTACULAR_SETTINGS = {
@@ -274,13 +278,20 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework_simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
-BROKER_URL = os.environ.get("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
-CELERY_ACCEPT_CONTENT = ["application/json"]
-CELERY_TIMEZONE = "Asia/Tehran"
-CELERY_ENABLE_UTC = False
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = 'json'
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django_redis.cache.RedisCache",
+#         "LOCATION": os.environ.get("REDIS_URL"),
+#         "OPTIONS": {"CLIENT_CLASS": "django_redis.client.DefaultClient"},
+#     },
+# }
+# BROKER_URL = os.environ.get("CELERY_BROKER_URL")
+# CELERY_RESULT_BACKEND = os.environ.get("CELERY_RESULT_BACKEND")
+# CELERY_ACCEPT_CONTENT = ["application/json"]
+# CELERY_TIMEZONE = "Asia/Tehran"
+# CELERY_ENABLE_UTC = False
+# CELERY_TASK_SERIALIZER = "json"
+# CELERY_RESULT_SERIALIZER = 'json'
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.c1.liara.email'

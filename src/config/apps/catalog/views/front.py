@@ -41,6 +41,8 @@ from config.apps.order.models import OrderItem, Order
 
 
 class CatalogSearchView(APIView):
+    throttle_scope = '30perminute'
+
     permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = CatalogSearchSerializer
@@ -115,6 +117,8 @@ class CatalogSearchView(APIView):
 
 
 class ProductSearchView(ListAPIView):
+    throttle_scope = '30perminute'
+
     permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = ProductCardSerializer
@@ -419,6 +423,8 @@ class ProductCommentListAPIView(ListAPIView):
 
 
 class ProductCommentCreateAPIView(ListAPIView):
+    throttle_scope = '2perhours'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
     serializer_class = ProductCommentCreateSerializer
@@ -439,6 +445,7 @@ class ProductCommentCreateAPIView(ListAPIView):
 
 
 class ProductVisitLoggedInView(APIView):
+    throttle_scope = '30perminute'
     permission_classes = [IsAuthenticated]
 
     def post(self, request, format=None):
@@ -451,18 +458,25 @@ class ProductVisitLoggedInView(APIView):
             product_slug = request.data.get('product_slug', None)
             if not product_slug:
                 return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
-            add_product_visit_celery.apply_async(kwargs={
-                'product_slug': product_slug,
-                'ip_address': ip_address,
-                'user_id': user.id,
+            # add_product_visit_celery.apply_async(kwargs={
+            #     'product_slug': product_slug,
+            #     'ip_address': ip_address,
+            #     'user_id': user.id,
+            #
+            # }, priority=1)
+            add_product_visit_celery(
+                product_slug,
+                ip_address,
+                user.id,
 
-            }, priority=1)
+            )
             return BaseResponse(status=status.HTTP_201_CREATED)
         except Exception as e:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProductVisitAnonymousView(APIView):
+    throttle_scope = '30perminute'
     authentication_classes = []
     permission_classes = [AllowAny]
 
@@ -475,11 +489,16 @@ class ProductVisitAnonymousView(APIView):
             product_slug = request.data.get('product_slug', None)
             if not product_slug:
                 return BaseResponse(status=status.HTTP_400_BAD_REQUEST)
-            add_product_visit_celery.apply_async(kwargs={
-                'product_slug': product_slug,
-                'ip_address': ip_address,
+            # add_product_visit_celery.apply_async(kwargs={
+            #     'product_slug': product_slug,
+            #     'ip_address': ip_address,
+            #
+            # }, priority=1)
+            add_product_visit_celery(
+                product_slug,
+                ip_address,
 
-            }, priority=1)
+            )
             return BaseResponse(status=status.HTTP_201_CREATED)
         except Exception as e:
             return BaseResponse(status=status.HTTP_400_BAD_REQUEST)

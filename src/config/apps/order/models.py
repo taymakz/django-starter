@@ -41,6 +41,7 @@ class Order(BaseModel):
         choices=PaymentStatusChoice,
         default=PaymentStatusChoice.OPEN_ORDER,
     )
+    verified_payment = models.BooleanField(default=False)  # use for payment
     lock = models.BooleanField(default=False)  # use for payment
     repayment_expire_at = models.DateTimeField(blank=True, null=True)
 
@@ -134,14 +135,22 @@ class Order(BaseModel):
         super().save(*args, **kwargs)
 
     def send_order_status_notification(self, pattern):
-        send_order_status_celery.apply_async(
-            kwargs={
-                "to": self.user.phone,
-                "pattern": pattern,
-                "number": self.slug,
-                "track_code": self.tracking_code,
-            },
-            priority=9
+        # send_order_status_celery.apply_async(
+        #     kwargs={
+        #         "to": self.user.phone,
+        #         "pattern": pattern,
+        #         "number": self.slug,
+        #         "track_code": self.tracking_code,
+        #     },
+        #     priority=9
+        # )
+        send_order_status_celery(
+
+            self.user.phone,
+            pattern,
+            self.slug,
+            self.tracking_code,
+
         )
 
     def get_absolute_url(self):

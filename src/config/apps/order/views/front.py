@@ -187,6 +187,8 @@ class OrderGetView(APIView):
 
 
 class OrderAddItemView(APIView):
+    throttle_scope = '30perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -324,6 +326,8 @@ class OrderAddItemView(APIView):
 
 
 class OrderReAddItemView(APIView):
+    throttle_scope = '1perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -409,6 +413,7 @@ class OrderReAddItemView(APIView):
 
 
 class OrderItemIncreaseView(APIView):
+    throttle_scope = '20perminute'
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -479,6 +484,8 @@ class OrderItemIncreaseView(APIView):
 
 
 class OrderItemDecreaseView(APIView):
+    throttle_scope = '20perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -524,6 +531,8 @@ class OrderItemDecreaseView(APIView):
 
 
 class OrderItemRemoveView(APIView):
+    throttle_scope = '20perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -555,6 +564,8 @@ class OrderItemRemoveView(APIView):
 
 
 class OrderItemClearView(APIView):
+    throttle_scope = '5perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -597,6 +608,8 @@ class OrderShippingListAPIView(APIView):
 
 
 class OrderCouponUseAPIView(APIView):
+    throttle_scope = '10perminute'
+
     authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
