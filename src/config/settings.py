@@ -145,14 +145,9 @@ ASGI_APPLICATION = "config.asgi.app"
 
 # For Export
 #  PYTHONIOENCODING=utf-8 python manage.py dumpdata > data.json
-if os.environ.get("DB_LOCAL") == "True":
-    DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get("DB_URL_LOCAL"))
-    }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(default=os.environ.get("DB_URL"))
-    }
+DATABASES = {
+    'default': dj_database_url.config(default=os.environ.get("DB_URL"))
+}
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
