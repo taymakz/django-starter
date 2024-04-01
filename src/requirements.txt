@@ -13,3 +13,8 @@ boto3
 django-imagekit
 requests
 markdown
+
+daphne
+drf-spectacular
+black
+django-debug-toolbar
