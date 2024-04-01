@@ -1,0 +1,6 @@
+-r requirements.txt
+
+daphne
+drf-spectacular
+black
+django-debug-toolbar
