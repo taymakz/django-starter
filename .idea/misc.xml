@@ -4,5 +4,5 @@
     <option name="executionMode" value="BINARY" />
     <option name="sdkName" value="Remote Python 3.12.1 Docker Compose (app)" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.12.1 Docker Compose (backend)" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.12 (backend)" project-jdk-type="Python SDK" />
 </project>
